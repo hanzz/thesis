@@ -1,3 +1,39 @@
+
+\chapter{Mikrokontroler MSP430}
+
+Tato kapitola se snaží stručně shrnout základy architektury mikrokontrolerů rodiny MSP430. Nesnaží se však kompletně nahradit dokumentaci k mikrokontrolérům
+MSP430, ačkoliv z ní vychází.
+
+Mikrokontrolery (MCU) jsou monolitické integrované obvody obsahující mikroprocesor, paměť pro uložení programu, paměť pro jeho běh a další periferie
+rozšiřující jeho funkčnost. Vyznačují se jednoduchostí, kompaktností a malou spotřebou. Používají se tak proto především pro jednoúčelová zařízení a 
+vestavěné (embedded) systémy.
+
+Mikrokontroler MSP430 je postaven na von Neumannově architektuře (má tedy společnou paměť pro data i program). Paměť je adresována po bytech složených z 8 bitů a páry bytů tvoří 16 bitové little-endian slova.
+
+Mikrokontrolery rodiny MSP430 obsahují 16 bitový mikroprocesor (CPU) a 16 registrů, každý o kapacitě 16 bitů. První čtyři registry mají speciální účel. Registr R0 slouží jako ukazatel na aktuální instrukci (PC - program counter). Register R1 ukazuje na vrchol zásobníku (SP - stack pointer). Register R2 je stavovým registrem (SR - status register) obsahující informace o stavu mikroprocesoru. Register R3 je použit pro generování často používaných konstant, takže je není potřeba načítat z paměti. Ostatní registry je možné volně používat.
+
+Instrukční sada obsahuje 27 instrukcí.
+
+\section{Základní hodinový modul}
+
+Jednou ze základních periferií mikrokontroleru rodiny MSP430 je základní hodinový modul (Basic Clock Module). Ve většině variant mikrokontroleru MSP430
+existují 4 možnosti zdroje hodin:
+
+\begin{itemize}
+\item \textbf{LFXT1CLK} - Nízko-frekvenční/vysoko-frekvenční oscilátor, který může být použit s externím krystalem, rezonátorem nebo vstupem externího hodinového signálu (typicky o frekcenci 32768 Hz).
+\item \textbf{XT2CLK} - Oscilátor, který může být použit s externím krystalem, rezonátorem nebo vstupem externího hodinového signálu o frekvencí 400 kHz až 16 Mhz.
+\item \textbf{DCOCLK} - Digitálně kontrolovaný oscilátor. Jeho frekvenci lze nastavit pomocí registrů od 1 Mhz do 16 Mhz.
+\item \textbf{VLOCLK} - Interní nízkofrekvenční oscilátor s typickou frekcení 12 kHz.
+\end{itemize}
+
+Tyto zdroje hodin lze pak použít jako vstup ve 3 zdrojích hodinového signálu:
+
+\begin{itemize}
+\item \textbf{MCLK} - Hlavní hodiny (Master clock) určují frekcenci běhu CPU.
+\item \textbf{SMCLK} - Vedlejší hodiny (Sub-main clock) určují frekcenci ostatních periferií.
+\item \textbf{ACLK} - Pomocné hodiny (Auxiliary clock). Jako zdroj může být použit pouze LFXT1CLK nebo VLOCLK.
+\end{itemize}
+
 \chapter{Návrh}
 \label{navrh}
 
@@ -52,10 +88,63 @@ výstupní port hodnotu 3.3 (tzv. 3.3 voltu), bude tato zprávy předána na vst
 
 \section{Návrh komponenty simulující MCU MSP430}
 
-Komponenta simulující mikrokontrolér MSP430 je klíčovou komponentou projektu. Bude umožňovat nahrání uživatelského programu a jeho následnout simulaci na základě
-vykonávání instrukcí a běhu svých dalších interních komponent. Umožní grafickému uživatelskému rozhraní přístup ke své paměti a registrům, čímž umožní krokování
-programů. Bude také poskytovat další ladící informace jako je například umístění lokálních a globálních proměnných v paměti nebo v registrech.
+Komponenta simulující mikrokontrolér MSP430 je klíčovou komponentou projektu. Bude umožňovat nahrání uživatelského programu a jeho
+následnout simulaci na základě vykonávání instrukcí a běhu svých dalších interních komponent. Umožní grafickému uživatelskému
+rozhraní přístup ke své paměti a registrům, čímž umožní krokování programů. Bude také poskytovat další ladící informace jako je například
+umístění lokálních a globálních proměnných v paměti nebo v registrech. \cite{cvs}
 
-Na obrázku ... lze vidět základní schéma MSP430 komponenty. V této kapitole jsou jednotlivé části tohoto schématu podrobněji rozebrány s důrazem na jejich funkce a 
-postavení v rámci celé MSP430 komponenty.
+Na obrázku \ref{fig:msp430_arch} lze vidět základní schéma MSP430 komponenty a její dekompozici. V této kapitole jsou jednotlivé části tohoto schématu podrobněji rozebrány s důrazem na jejich funkce a postavení v rámci celé MSP430 komponenty.
+
+\begin{figure}[h]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/msp430_arch}
+\caption{Návrh architektury MSP430 komponenty.}
+\label{fig:msp430_arch}
+\end{figure}
+
+\subsection{Paměť}
+
+Paměť slouží k uchování jak uživatelského programu tak dat. Ostatní části mikrokontroléru (zejména pak interní periferie jako například USI nebo USCI) musí být schopny do paměti zapisovat jak slova tak jednotlivé byty a být informovány o případném čtení nebo zápisu provedeném uživatelským programem. To je podstatná vlastnost například pro automatické smazání příznaku přerušení po jeho přečtení. Dalším možným využitím informování zápisu do paměti je možnost zastavení simulace po změně hodnoty v paměti a tím lepší možnost ladit uživatelský program.
+
+\subsection{Registry}
+
+Registry jsou 16 bitové a mikrokontroler MSP430 jich obsahuje 16. Návrh registrů, podobně jako návrh paměti, počítá s možností čtení a zápisu jednoho nebo dvou bytů. Opět je potřeba umožnit ostatním částem mikrokontroléru zjistit, že došlo k zápisu do registru. Typickým předpokládaným využitím je krokování
+programu na základě PC registru.
+
+\subsection{Přepínač pinů}
+
+Každá varianta mikrokontroleru obsahuje různé interní periferie a tím pádem i jiný počet pinů a jejich rozmístění. Na jeden pin může být zapojeno více interních periferií a to, která periferie právě daný pin obsluhuje, je určeno na základě registrů (například PxSEL a PxSEL2).
+
+Každá varianta mikrokontroleru MSP430 bude z hlediska pinů a jejich připojení na interní periferie popsána v XML souboru, který bude obsahovat o každém
+pinu následující informace:
+
+\begin{itemize}
+\item Umístění pinu na pouzdru mikrokontroleru (vlevo, vpravo, ...) včetně jeho pořadí na dané straně pouzdra.
+\item Seznam názvů vstupů/výstupu realizovaných pomocí pinu a hodnoty bitů v registrech určujících, který vstup/výstup bude kdy zvolen.
+\end{itemize}
+
+
+Interní komponenty budou mít zaregistrovány v přepínači pinů názvy svých vstupů a výstupů.
+Přepínač pinů pak bude na základě aktuální simulované varianty monitorovat registry PxSEL, PxSEL2, ... a na základě jejich hodnoty přeposílat vstupy z externích komponent konkrétním interním periferiím (princip multiplexoru). Tento princip lze vidět na obrázku \ref{fig:msp430_pinmult}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/msp430_pinmult}
+\caption{Přepínač pinů přeposílá vstup z externí komponenty na interní periferii podle hodnoty PxSEL.}
+\label{fig:msp430_pinmult}
+\end{figure}
+
+\subsection{Zdroje hodin}
+
+Z hlediska simulace je možné zdroje hodin rozdělit na dvě kategorie. Zdroje závislé na externích komponentách (LFXT1CLK, XT2CLK) a zdroje závislé na čase (VLOCLK, DCOCLK).
+
+Zdroje závislé na externích komponentách musí být schopny přijímat zprávy od externích komponent a na jejich základě pak generovat hodinový signál, který je dále zpracován jednotlivými hodinami.
+
+Zdroje závislé na čase musí být samostatnými simulačními (DEVS) komponentami a musí samy
+na základě uběhnutého času generovat hodinový signál s patřičnou frekvencí.
+
+Všechny zdroje hodin musí generovat informace jak o náběžné, tak o sestupné hraně hodinového signálu. To je podstatná vlastnost například pro modul USI, který provádí své akce jak s náběžnou tak sestupnou hranou.
+
+
+
 
