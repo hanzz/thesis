@@ -1,8 +1,12 @@
 
+\chapter{Úvod}
+
+\chapter{Simulace}
+
 \chapter{Mikrokontroler MSP430}
 
 Tato kapitola se snaží stručně shrnout základy architektury mikrokontrolerů rodiny MSP430. Nesnaží se však kompletně nahradit dokumentaci k mikrokontrolérům
-MSP430, ačkoliv z ní vychází.
+MSP430, ačkoliv z ní vychází. Pro návrh a implementaci kompletního simulátoru nejsou informace v této kapitole dostačující, ale byly vybrány s ohledem na úvod do problematiky mikrokontrolerů MSP430 a pochopení následujících kapitol a činnosti simulátoru.
 
 Mikrokontrolery (MCU) jsou monolitické integrované obvody obsahující mikroprocesor, paměť pro uložení programu, paměť pro jeho běh a další periferie
 rozšiřující jeho funkčnost. Vyznačují se jednoduchostí, kompaktností a malou spotřebou. Používají se tak proto především pro jednoúčelová zařízení a 
@@ -14,7 +18,76 @@ Mikrokontrolery rodiny MSP430 obsahují 16 bitový mikroprocesor (CPU) a 16 regi
 
 \section{Instrukční sada}
 
-Instrukční sada obsahuje 27 instrukcí.
+Instrukční sada obsahuje 27 instrukcí. Všechny instrukce jsou 16 bitů dlouhé. V závislosti na adresovém módu však za nimi moho následovat až 2 slova operandů (typicky adres).
+
+Většina instrukcí pracujících s daty umí pracovat jak s operandem velikosti jednoho bytu, tak z celým slovem. Instrukce lze je rozdělit do 3 typů, které se liší i jejich zakódováním v paměti:
+
+\subsubsection{Instrukce s jedním operandem}
+
+V závislosti na operačním kódu (opcode) rozlišujeme následující jednooperandové instrukce (.B značí bytovou formu instrukce):
+
+\begin{itemize}
+\item \textbf{RRC(.B)} - 9 bitová rotace s přenosem nejvyššího bitu.
+\item \textbf{SWPB} - Záměna horních a spodních 8 bitů v rámci jednoho registru.
+\item \textbf{RRA(.B)} - 8 bitový aritmetický posun doprava.
+\item \textbf{SXT} - Rozšíření znaménka z 8 bitů na 16 bitů
+\item \textbf{PUSH(.B)} - ložení operandu na zásobník. Sníží hodnotu SP o 2.
+\item \textbf{CALL} - Volání podprogramu. Získá operand, uloží PC na zásobník a do PC uloží hodnotu operandu.
+\item \textbf{RETI}	Návrat z přerušení. Obnoví ze zásobníku SP a PC.
+\end{itemize}
+
+\subsubsection{Instrukce s dvěma operandy}
+
+Mikrokontroler MSP430 rozlišuje tyto instrukce a provádí za pomocí nich následující operace:
+
+\begin{itemize}
+\item \textbf{MOV src,dest} - dest = src
+\item \textbf{ADD src,dest} - dest += src
+\item \textbf{ADDC src,dest} - dest += src + C
+\item \textbf{SUBC src,dest} - dest += ~src + C
+\item \textbf{SUB src,dest} - dest -= src
+\item \textbf{CMP src,dest} - dest - src (Mění pouze stavový registr)
+\item \textbf{DADD src,dest} - dest += src + C, BCD.
+\item \textbf{BIT src,dest} - dest \& src (Mění pouze stavový registr)
+\item \textbf{BIC src,dest} - dest \&= ~src
+\item \textbf{BIS src,dest} - dest |= src
+\item \textbf{XOR src,dest} - dest \^ = src
+\item \textbf{AND src,dest} - dest \&=- src
+\end{itemize}
+
+\subsubsection{Podmíněné instrukce}
+
+Podmíněné instrukce jsou typicky instrukce skoků, které provedou skok pouze při splnění určité podmínky (Hodnoty konkrétního bytu ze statového registru). Zpravidla je před nimi volání instrukce CMP pro porovnání dvou hodnot a nastavení stavového registru. Opět rozlišujeme několik druhů podmíněných instrukcí:
+
+\begin{itemize}
+\item \textbf{JNE/JNZ} - Provede skok pokud Z==0 (po zavolání CMP se 2 hodnoty nerovnají).
+\item \textbf{JEQ/Z} - Provede skok pokud Z==1 (po zavolání CMP se 2 hodnoty rovnají).
+\item \textbf{JNC/JLO} - Provede skok pokud C==0 (po zavolání CMP se je 1. neznaménková hodnota menší než 2.).
+\item \textbf{JC/JHS} - Provede skok pokud C==1 (po zavolání CMP se je 1. neznaménková hodnota vetší nebo rovna druhé).
+\item \textbf{JN} - Provede skok pokud N==1.
+\item \textbf{JGE} - Provede skok pokud N==V (po zavolání CMP se je 1. znaménková hodnota vetší nebo rovna druhé).
+\item \textbf{JL} - Provede skok pokud N!=V (po zavolání CMP se je 1. znaménková hodnota menší než 2.).
+\item \textbf{JMP} - Provede skok vždy.
+\end{itemize}
+
+\subsubsection{Časování instrukcí}
+
+Každá instrukce potřebuje ke svému vykonání určitý počet hodinových cyklů. Zpravidla potřebuje instrukce 1 cyklus pro každý přístup do paměti. Z tohoto pravidla však existuje několik vyjímek popsaných v dokumentaci k mikrokontrolerům MSP430.
+ 
+\section{Adresové módy}
+
+Mikrokontroler MSP430 pracuje se 7 adresovými módy pro zdrojový operand a 4 adresovými módy (první 4 módy následujícího seznamu) pro operand cílový:
+
+\begin{itemize}
+\item \textbf{Registrový mód} - Rn - Operand je uložen v registru Rn.
+\item \textbf{Indexový mód} - X(Rn) - Operand je uložen v paměti na adrese Rn + X. X je uloženo v následujícím slově za instrukcí.
+\item \textbf{Symbolický mód} - ADDR - Operand je uložen v paměti na adrese PC + X. X je uloženo v následujícím slově za instrukcí.
+\item \textbf{Absolutní mód} - \&ADDR - Adresa operandu je uložena v následujícím slově za instrukcí.
+\item \textbf{Nepřímý registrový mód} - @Rn - Register Rn ukažuje na umístění operandu.
+\item \textbf{Nepřímý mód s automatickou inkrementací} - Register Rn ukažuje na umístění operandu. Rn je inkrementován o hodnotu 1 (přístup k bytu) nebo o 2 (přístup ke slovu).
+\item \textbf{Immediate mód} - Hodnota operandu je umístěna v následujícím slově za instrukcí.
+\end{itemize}
+
 
 \section{Přerušení}
 
@@ -41,6 +114,26 @@ Tyto zdroje hodin lze pak použít jako vstup ve 3 zdrojích hodinového signál
 \item \textbf{SMCLK} - Vedlejší hodiny (Sub-main clock) určují frekcenci ostatních periferií.
 \item \textbf{ACLK} - Pomocné hodiny (Auxiliary clock). Jako zdroj může být použit pouze LFXT1CLK nebo VLOCLK.
 \end{itemize}
+
+\section{Časovač}
+
+\chapter{Formáty uložení spustitelného kódu}
+
+Tato kapitole shrnuje dva nejpoužívanější formáty pro uložení binárního kódu, který je pak dále nahráván do mikrokontrolerů, včetně mikrokontroleru MSP430. Jedná se o formáty Intel HEX (A43) a ELF. Je důležité se s nimi seznámit, protože je pak dále navrhovaný simulátor bude muset načítat a zpracovat.
+
+\section{Intel HEX (A43)}
+
+Jedná se o jednoduchý textový formát obsahující jednotlivé byty program, jejich umístení v paměti a adresu začátku programu.
+
+TODO jen popis jednoho radku Intel HEX a ukazka
+
+\section{ELF}
+
+Jde o komplexní formát. Z hlediska zpracování a tvorby simulátoru však přináší několik zajímavých vlastností. Umožňuje totiž uložení tzv. debug informací. Jedná se o informace, pomocí nichž lze daný program ladit.
+
+TODO lehky popis ELF a ukazka jak vyuzit ladici informace pro zobrazeni promennych
+
+
 
 \chapter{Návrh}
 \label{navrh}
@@ -101,7 +194,7 @@ umístění lokálních a globálních proměnných v paměti nebo v registrech.
 
 Na obrázku \ref{fig:msp430_arch} lze vidět základní schéma MSP430 komponenty a její dekompozici. V této kapitole jsou jednotlivé části tohoto schématu podrobněji rozebrány s důrazem na jejich funkce a postavení v rámci celé MSP430 komponenty.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/msp430_arch}
 \caption{Návrh architektury MSP430 komponenty.}
@@ -220,6 +313,58 @@ Grafické uživatelské rozhraní by tedy mělo mít následující funkce:
 \item \textbf{Lazení signálů} - Možnost kontrolovat v čase signály přenášené mezi simulovanými komponentami.
 \end{itemize}
 
-V této kapitole jsou tyto požadavky kladené na grafické uživatelské rozhraní detailně rozebrány a je navženo grafické uživatelské rozhraní, které tyto
+V této kapitole jsou tyto požadavky kladené na grafické uživatelské rozhraní detailně rozebrány a je navrženo grafické uživatelské rozhraní, které tyto
 požadavky splňuje.
 
+\subsection{Základní koncepce}
+
+Nejdůležitější součástí hlavního okna simulátoru bude kreslící plocha. Na této ploše budou vykresleny jednotlivé simulované komponenty (mikrokontroler
+a periferie) včetně jejich pinů a propojení mezi piny. Uživatel bude schopen přidávat nové periferie a odstraňovat stávající, propojovat je pomocí
+vodičů a měnit jejich vlastnosti (například barvu LED diody). Během simulace se budou všechny komponenty aktualizovat a uživatel tak uvidí průběh simulace
+(LED dioda bude blikat, aktivní piny budou zobrazeny rozdílnou barvou než piny neaktivní atd.).
+
+Další důležitou částí grafického uživatelského rozhraní bude zobrazení zdrojového kódu programu nahraného v mikrokontroleru. Tento kód bude poskytnut
+přímo mikrokontrolerem a GUI jej pouze zobrazí. Z principu lze vždy zobrazit kód v assembleru. Pokud však bude dostupný zdrojový kód v jazyce C, bude 
+simulátor schopen přepínat mezi kódem v assembleru a kódem v C. Po zastavení simulace se zobrazí aktuální instrukce (případně odpovídající příkaz v jazyce C). Uživatelské rozhraní bude rovněž umožňovat stanovení breakpointů (bodů zastavení) na jednotlivých instrukcích, čímž umožní jednodušší krokování
+simulace.
+
+Pro zobrazení interních informací o jednotlivých simulovaných komponentách bude sloužit třetí část uživatelského rozhraní. Půjde o strukturovaný seznam
+typu název-hodnota, který bude zobrazovat informace o aktuálních hodnotách registrech mikroprocesoru, důležitých místech v paměti, nebo například hodnotách
+lokálních proměnných v místě zastavení simulace. Každá komponenta bude schopna přidat do tohoto seznamu své položky a předávat tak uživateli potřebné
+interní informace.
+
+Poslední dílčí částí uživatelského rozhraní bude rozhraní pro zobrazení napětí na jednotlivých pinech formou osciloskopu. Uživatel si bude moci vybrat
+piny, které chce běhe simulace sledovat a během simulace (nebo i po jejím zastavení) uvidí veškeré změny signálu, které se na pinech odehrály.
+
+\subsection{Správa projektu}
+
+Při vytvoření nového projektu bude uživatel dotázán na vybrání jeho architektury (návrh celé aplikace se neomezuje pouze na mikrokontrolery rodiny MSP430) a varianty dané architektury (v případě mikrokontroleru MSP430 se bude jednat o jeho konkrétní typ). Po vytvoření projektu uvidí uživatel na kreslící ploše vybraný mikrokotroler a bude mu umožněno nahrání programu a přidání dalších periferií.
+
+Při uložení projektu bude potřeba uložit informace o všech komponentech, jejich propojení a umístení na kreslící ploše. Budou se rovněž ukládat informace
+o aktuálně používaných breakpointech a sledovaných pinech.
+
+
+\subsection{Řízení simulace}
+
+Grafické uživatelské rozhraní umožní spuštění simulace, její dočasné zastavení a její restartování. Během simulace bude uživateli prezentován aktuální simulační čas a uvidí změny simulovaného zapojení na kreslící ploše a osciloskopu. Při dočasném zastavení simulace uvidí uživatel aktuální
+stav simulovaného zapojení (stav všech registrů a paměti, následující instrukci ve zdrojovém kódu atd.). Simulaci bude také možné automaticky zastavit po určitém simulačním čase.
+
+K dispozici bude také funkce pro krokování programu s následujícími 3 módy:
+
+\begin{itemize}
+\item \textbf{Událost simulace} - Provede další událost v simulaci. Jedná se například o jeden tik hodin MCLK, nebo 1 tik externího oscilátoru. Jedna událost je nejmenší možný krok, jaký lze v diskrétní simulaci provést.
+\item \textbf{Instrukce} - Provede další instrukci mikrokontroleru. Instrukce zpravidla trvá více simulačních kroků, půjde tedy o méně jemné krokování simulace.
+\item \textbf{Řádek v jazyce C} - Provádí instrukce mikrokontroleru, dokud tyto implementují stále tentýž řádek v zdrojovém souboru v jazyce C. Při volbě tohoto krokování musí být výsledná aplikace schopna detekovat cykly (například 1 instrukce NOP), aby nedošlo k zamrznutí simulace při vykonávání kroku.
+\end{itemize}
+
+Další možnosti pozastavení simulace jsou takzvané breakpointy. Uživatel musí umět nastavit pozastavení simulace v případě, kdy určitý registr nabyl jím definovanou hodnotu (případně když hodnota v paměti definovaná adresou nabyla konkrétni hodnotu).
+
+\subsection{Lazení programu}
+
+Při každém pozastavení simulace uvidí uživatel aktuální instrukci ve zdrojovém kódu. Kromě samotného zdrojového kódu mu budou zobrazeny názvy všech zdrojových souborů nahraného programu a všech funkcí v daných souborech. Uživatel bude moci vybrat daný soubor a funkci v něm pro rychlejší orientaci v projektu. V případě dostupnosti zdrojového kódu v jazyce C se uživateli zobrazí tento kód. Bude však možné zobrazit diassemblovaný kód v assembleru. Uživatel bude moci přidávat breakpointy v libovolných místech kódu a po opětovném spuštění simulace se tato zastaví na místě, které uživatel zvolil.
+
+V grafickém uživatelském rozhraní budou rovněž zobrazeny hodnoty registrů a důležitých adres v paměti (standardně hexadecimálně, avšak bude možné zobrazit jejich hodnoty i v jiných soustavách). Uživatel bude moci použít tento seznam registrů a míst v paměti pro rychlé přidání nových breakpointů. Na základě místa ve zdrojovém kódu, na kterém došlo k pozastavení simulace, budou zobrazeny jména a hodnoty lokálních proměnných.
+
+\subsection{Lazení signálů}
+
+Uživateli bude umožněno vybrání pinů na kreslící ploše a jejich zařazení do seznamu sledovaných pinů. V pruběhu simulace se změny napětí na sledovaných pinech budou ukládat a zobrazovat uživateli v graficky pomocí rozhraní podobného osciloskopu. Uživatel tak uvidí vztahy mezi jednotlivými signály generovanými na pinech v závislosti na čase. Standardně bude rozhraní ukazovat průběh celé simulace. Bude však možné určitý časový úsek přiblížit a získat tak detailnější pohled. Uživatelské rozhraní rovněž umožní export těchto dat.
