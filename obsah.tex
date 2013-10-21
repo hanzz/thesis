@@ -119,26 +119,62 @@ Tyto zdroje hodin lze pak použít jako vstup ve 3 zdrojích hodinového signál
 
 \chapter{Formáty uložení spustitelného kódu}
 
-Tato kapitole shrnuje dva nejpoužívanější formáty pro uložení binárního kódu, který je pak dále nahráván do mikrokontrolerů, včetně mikrokontroleru MSP430. Jedná se o formáty Intel HEX (A43) a ELF. Je důležité se s nimi seznámit, protože je pak dále navrhovaný simulátor bude muset načítat a zpracovat.
+Tato kapitole shrnuje dva nejpoužívanější formáty pro uložení binárního kódu, který je nahráván do mikrokontrolerů. Jedná se o formáty Intel HEX (A43) a ELF. Je důležité se s nimi seznámit, protože je navrhovaný simulátor bude muset načítat a zpracovávat.
 
 \section{Intel HEX (A43)}
 
-Jedná se o jednoduchý textový formát obsahující jednotlivé byty program, jejich umístení v paměti a adresu začátku programu.
+Jedná se o jednoduchý textový formát obsahující jednotlivé byty programu, jejich umístení v paměti a adresu začátku programu. Na obrázku \ref{fig:intelhex} lze vidět okomentovanou ukázku formátu Intel HEX.
 
-TODO jen popis jednoho radku Intel HEX a ukazka
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/intelhex}
+\caption{Ukázka souboru ve formátu Intel HEX s popisky.}
+\label{fig:intelhex}
+\end{figure}
+
+Formát Intel HEX používá následujících 5 typů záznamu:
+
+\begin{itemize}
+\item \textbf{00} - Datový záznam.
+\item \textbf{01} - Konec souboru.
+\item \textbf{02} - Segmentový záznam (nejprve MSB)
+\item \textbf{03} - Startovací záznam (adresa daná jako segment(16 bitů) a offset(16 bitů); nejprve MSB)
+\item \textbf{04} - Rozšířený adresový záznam (nejprve MSB)
+\item \textbf{05} - Startovací záznam (32bitová lineární adresa; nejprve MSB)
+\end{itemize}
 
 \section{ELF}
 
-Jde o komplexní formát. Z hlediska zpracování a tvorby simulátoru však přináší několik zajímavých vlastností. Umožňuje totiž uložení tzv. debug informací. Jedná se o informace, pomocí nichž lze daný program ladit.
+Formát ELF (Executable and Linkable Format) je komplexní formát pro ukládání spustitelných souborů. Je rozšířen převážně na Unixových systémech. Formát ELF je základním výstupním formátem překladače GCC, který je často používán pro kompilování programů pro mikrokontroler MSP430. Kolem překladače GCC existuje řada dalších nástrojů, které umožňují získat z ELF souboru řadu dalších informací aniž by musel programátor implementovat parser formátu ELF.
 
-TODO lehky popis ELF a ukazka jak vyuzit ladici informace pro zobrazeni promennych
+Jedním z těchto nástrojů je program objcopy umožňující převod z ELF formátu do jiných formátů. Lze jím převést soubor ve formátu ELF do formátu Intel HEX, který lze snadněji zpracovat. Dalším nástrojem je nástroj objdump. Pomocí tohoto nástroje lze například disassemblovat program obsažený v ELF souboru.
 
+\subsection{DWARF - ladící informace}
+
+Klíčovou vlastností formátu ELF je však možnost uložení ladících informací ve formátu DWARF. Jedná se v podstatě o strom reprezentující celý výsledný
+program. Jednotlivé části programu (zdrojové soubory, funkce, globální a lokální proměnné, datové typy atd.) jsou uzly tohoto stromu. Debuggery (jako je například GDB) pak těchto informací využívají při ladění programu a umožňují zobrazovat detailní ladící informace, jako je například hodnota lokální proměnné nebo zdrojový kód dané funkce.
+
+Na obrázku \ref{fig:dwarf} lze vidět DWARF strom vygenerovaný pro jednoduchý program typu Hello World v jazyce C. Ze stromu je patrné, že každý uzel má svůj typ, od kterého se odvíjí jeho další atributy. Kořenem stromu je kompilační jednotka "hello.c" s atributy lowPC a highPC. Kdykoliv se vykonávání programu zastaví na instrukci s adresou mezi těmito dvěma atributy, jedná se o instrukci generovanou z této kompilační jednotky. V rámci této kompilační jednotky je definována pouze jediný podprogram "main" s návratovou hodnotou typu "int". Pokud by bylo podprogramů více, lze opět konkrétní podprogram určit za pomocí atributů lowPC a highPC a adresy aktuální instrukce. Datový typ "int" je definován jako základní znaménkový typ s velikostí 4 byty.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/dwarf}
+\caption{DWARF strom Hello World programu v jazyce C.}
+\label{fig:dwarf}
+\end{figure}
+
+Formát DWARF definuje velké množství typů uzlů a jejich atributů. Z hlediska simulátorů je však důležité popsat ještě uložení proměnných. Proměnné mají krom svého jména a typu ještě lokaci. Ta definuje, kde se nachází hodnota proměnné. Adresa proměnné se však může během běhu programu měnit - někdy bude výhodné mít proměnnou v registru, jindy v paměti, nebo dokonce z části v registru a z části v paměti. Proto je lokace proměnné ve formátu DWARF většinou definována v závislosti na adrese aktuální instrukce v takzvaném seznamu lokací.
+
+Seznam lokací obsahuje pro každou proměnnou její lokaci v závislosti na adrese aktuální instrukce. Každá lokace je pak tvořena kódem zásobníkového automatu se speciálními mikroinstrukcemi, po jehož vykonání je na jeho vrcholu buď hodnota proměnné, číslo registru ve kterém se hodnota nachází nebo
+adresa do paměti.
+
+K získání těchto informací z ELF souboru lze opět použít nástroj objdump.
 
 
 \chapter{Návrh}
 \label{navrh}
 
-Cílem této kapitoly je návrh simulátoru, jeho rozhraní pro komunikaci s periferiemi a mikrokontroléry a knihovny implementující mikrokontrolér MSP430.
+Cílem této kapitoly je návrh simulátoru, jeho rozhraní pro komunikaci s periferiemi a mikrokontrolery a knihovny implementující mikrokontroler MSP430.
 Je zde také zmíněno grafické uživatelské rozhraní simulátoru.
 
 \section{Návrh simulátoru}
