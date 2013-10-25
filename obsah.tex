@@ -5,22 +5,23 @@
 
 \chapter{Mikrokontroler MSP430}
 
-Tato kapitola se snaží stručně shrnout základy architektury mikrokontrolerů rodiny MSP430. Nesnaží se však kompletně nahradit dokumentaci k mikrokontrolérům
-MSP430, ačkoliv z ní vychází. Pro návrh a implementaci kompletního simulátoru nejsou informace v této kapitole dostačující, ale byly vybrány s ohledem na úvod do problematiky mikrokontrolerů MSP430 a pochopení následujících kapitol a činnosti simulátoru.
+Tato kapitola stručně shrnuje základy architektury mikrokontrolerů rodiny MSP430. Nesnaží se však kompletně nahradit jejich dokumentaci, ačkoliv z ní vychází. Pro návrh a implementaci kompletního simulátoru nejsou informace v této kapitole dostačující, ale byly vybrány s ohledem na úvod do problematiky mikrokontrolerů MSP430 a pochopení následujících kapitol a činnosti navrhovaného simulátoru.
 
 Mikrokontrolery (MCU) jsou monolitické integrované obvody obsahující mikroprocesor, paměť pro uložení programu, paměť pro jeho běh a další periferie
 rozšiřující jeho funkčnost. Vyznačují se jednoduchostí, kompaktností a malou spotřebou. Používají se tak proto především pro jednoúčelová zařízení a 
 vestavěné (embedded) systémy.
 
-Mikrokontroler MSP430 je postaven na von Neumannově architektuře (má tedy společnou paměť pro data i program). Paměť je adresována po bytech složených z 8 bitů a páry bytů tvoří 16 bitové little-endian slova.
+Mikrokontroler MSP430 je postaven na von Neumannově architektuře (má tedy společnou paměť pro data i program). Paměť je adresována po bytech složených z 8 bitů a páry bytů tvoří 16bitové little-endian slova.
 
-Mikrokontrolery rodiny MSP430 obsahují 16 bitový mikroprocesor (CPU) a 16 registrů, každý o kapacitě 16 bitů. První čtyři registry mají speciální účel. Registr R0 slouží jako ukazatel na aktuální instrukci (PC - program counter). Register R1 ukazuje na vrchol zásobníku (SP - stack pointer). Register R2 je stavovým registrem (SR - status register) obsahující informace o stavu mikroprocesoru. Register R3 je použit pro generování často používaných konstant, takže je není potřeba načítat z paměti. Ostatní registry je možné volně používat.
+Mikrokontrolery rodiny MSP430 obsahují 16bitový mikroprocesor (CPU) a 16 registrů, každý o kapacitě 16 bitů. První čtyři registry mají speciální účel. Registr R0 slouží jako ukazatel na aktuální instrukci (PC - program counter). Register R1 ukazuje na vrchol zásobníku (SP - stack pointer). Register R2 je stavovým registrem (SR - status register) obsahující informace o stavu mikroprocesoru. Register R3 je použit pro generování často používaných konstant, takže je není potřeba načítat z paměti. Ostatní registry je možné volně využít v uživatelském programu.
+
+Nejdůležitějšími stavovými bity ve stavovém registru jsou bity N (nastaven pokud je výsledek operace negativní), Z (nastaven pokud je výsledek operace nulový), C (nastaven pokud došlo k přenosu nejvyššího bitu) a V (nastaven pokud došlo při operaci k přetečení).
 
 \section{Instrukční sada}
 
 Instrukční sada obsahuje 27 instrukcí. Všechny instrukce jsou 16 bitů dlouhé. V závislosti na adresovém módu však za nimi moho následovat až 2 slova operandů (typicky adres).
 
-Většina instrukcí pracujících s daty umí pracovat jak s operandem velikosti jednoho bytu, tak z celým slovem. Instrukce lze je rozdělit do 3 typů, které se liší i jejich zakódováním v paměti:
+Většina instrukcí pracujících s daty umí pracovat jak s operandem velikosti jednoho bytu, tak z celým slovem. Instrukce lze rozdělit do 3 typů, které se liší i jejich zakódováním v paměti:
 
 \subsubsection{Instrukce s jedním operandem}
 
@@ -38,7 +39,7 @@ V závislosti na operačním kódu (opcode) rozlišujeme následující jednoope
 
 \subsubsection{Instrukce s dvěma operandy}
 
-Mikrokontroler MSP430 rozlišuje tyto instrukce a provádí za pomocí nich následující operace:
+Mikrokontroler MSP430 rozlišuje tyto instrukce se dvěma operandy a provádí za pomocí nich následující operace:
 
 \begin{itemize}
 \item \textbf{MOV src,dest} - dest = src
@@ -57,7 +58,7 @@ Mikrokontroler MSP430 rozlišuje tyto instrukce a provádí za pomocí nich nás
 
 \subsubsection{Podmíněné instrukce}
 
-Podmíněné instrukce jsou typicky instrukce skoků, které provedou skok pouze při splnění určité podmínky (Hodnoty konkrétního bytu ze statového registru). Zpravidla je před nimi volání instrukce CMP pro porovnání dvou hodnot a nastavení stavového registru. Opět rozlišujeme několik druhů podmíněných instrukcí:
+Podmíněné instrukce jsou typicky instrukce skoků, které provedou skok pouze při splnění určité podmínky (Hodnoty konkrétního bitu ze statového registru). Zpravidla je před nimi volání instrukce CMP pro porovnání dvou hodnot a nastavení stavového registru. Opět rozlišujeme několik druhů podmíněných instrukcí:
 
 \begin{itemize}
 \item \textbf{JNE/JNZ} - Provede skok pokud Z==0 (po zavolání CMP se 2 hodnoty nerovnají).
@@ -84,7 +85,7 @@ Mikrokontroler MSP430 pracuje se 7 adresovými módy pro zdrojový operand a 4 a
 \item \textbf{Symbolický mód} - ADDR - Operand je uložen v paměti na adrese PC + X. X je uloženo v následujícím slově za instrukcí.
 \item \textbf{Absolutní mód} - \&ADDR - Adresa operandu je uložena v následujícím slově za instrukcí.
 \item \textbf{Nepřímý registrový mód} - @Rn - Register Rn ukažuje na umístění operandu.
-\item \textbf{Nepřímý mód s automatickou inkrementací} - Register Rn ukažuje na umístění operandu. Rn je inkrementován o hodnotu 1 (přístup k bytu) nebo o 2 (přístup ke slovu).
+\item \textbf{Nepřímý mód s automatickou inkrementací} - Register Rn ukazuje na umístění operandu. Rn je inkrementován o hodnotu 1 (přístup k bytu) nebo o 2 (přístup ke slovu).
 \item \textbf{Immediate mód} - Hodnota operandu je umístěna v následujícím slově za instrukcí.
 \end{itemize}
 
@@ -97,13 +98,12 @@ Přerušení mají své pevně dané priority. Pokud nastane více žádostí o 
 
 \section{Základní hodinový modul}
 
-Jednou ze základních periferií mikrokontroleru rodiny MSP430 je základní hodinový modul (Basic Clock Module). Ve většině variant mikrokontroleru MSP430
-existují 4 možnosti zdroje hodin:
+Jednou ze základních periferií mikrokontroleru rodiny MSP430 je základní hodinový modul (Basic Clock Module). Poskytuje hodinový signál pro mikroprocesor a periferie mikrokontroleru. Ve většině variant mikrokontroleru MSP430 jsou v rámci hodinového modulu implementovány 4 možné zdroje hodin:
 
 \begin{itemize}
 \item \textbf{LFXT1CLK} - Nízko-frekvenční/vysoko-frekvenční oscilátor, který může být použit s externím krystalem, rezonátorem nebo vstupem externího hodinového signálu (typicky o frekcenci 32768 Hz).
 \item \textbf{XT2CLK} - Oscilátor, který může být použit s externím krystalem, rezonátorem nebo vstupem externího hodinového signálu o frekvencí 400 kHz až 16 Mhz.
-\item \textbf{DCOCLK} - Digitálně kontrolovaný oscilátor. Jeho frekvenci lze nastavit pomocí registrů od 1 Mhz do 16 Mhz.
+\item \textbf{DCOCLK} - Digitálně kontrolovaný oscilátor. Jeho frekvenci lze nastavit pomocí registrů (například u MSP430G2253 od 1 Mhz do 16 Mhz).
 \item \textbf{VLOCLK} - Interní nízkofrekvenční oscilátor s typickou frekcení 12 kHz.
 \end{itemize}
 
@@ -145,16 +145,16 @@ Formát Intel HEX používá následujících 5 typů záznamu:
 
 \section{ELF}
 
-Formát ELF (Executable and Linkable Format) je komplexní formát pro ukládání spustitelných souborů. Je rozšířen převážně na Unixových systémech. Formát ELF je základním výstupním formátem překladače GCC, který je často používán pro kompilování programů pro mikrokontroler MSP430. Kolem překladače GCC existuje řada dalších nástrojů, které umožňují získat z ELF souboru řadu dalších informací aniž by musel programátor implementovat parser formátu ELF.
+Formát ELF (Executable and Linkable Format) je komplexní formát pro ukládání spustitelných souborů. Je rozšířen převážně na Unixových systémech. Formát ELF je základním výstupním formátem překladače GCC, který je často používán pro kompilování programů pro mikrokontroler MSP430. Kolem překladače GCC existuje řada dalších nástrojů, které umožňují získat z ELF souboru další informace aniž by musel programátor implementovat parser formátu ELF.
 
-Jedním z těchto nástrojů je program objcopy umožňující převod z ELF formátu do jiných formátů. Lze jím převést soubor ve formátu ELF do formátu Intel HEX, který lze snadněji zpracovat. Dalším nástrojem je nástroj objdump. Pomocí tohoto nástroje lze například disassemblovat program obsažený v ELF souboru.
+Jedním z těchto nástrojů je program objcopy umožňující převod z ELF formátu do jiných formátů. Lze jím převést soubor z formátu ELF do formátu Intel HEX, který lze snadněji zpracovat. Dalším nástrojem je nástroj objdump. Pomocí tohoto nástroje lze například disassemblovat program obsažený v ELF souboru.
 
 \subsection{DWARF - ladící informace}
 
 Klíčovou vlastností formátu ELF je však možnost uložení ladících informací ve formátu DWARF. Jedná se v podstatě o strom reprezentující celý výsledný
-program. Jednotlivé části programu (zdrojové soubory, funkce, globální a lokální proměnné, datové typy atd.) jsou uzly tohoto stromu. Debuggery (jako je například GDB) pak těchto informací využívají při ladění programu a umožňují zobrazovat detailní ladící informace, jako je například hodnota lokální proměnné nebo zdrojový kód dané funkce.
+program. Jednotlivé části programu (zdrojové soubory, funkce, globální a lokální proměnné, datové typy atd.) jsou uzly tohoto stromu. Debuggery (jako je například GDB) pak těchto informací využívají při ladění programu a umožňují zobrazovat detailní ladící informace jako je hodnota lokální proměnné nebo zdrojový kód dané funkce.
 
-Na obrázku \ref{fig:dwarf} lze vidět DWARF strom vygenerovaný pro jednoduchý program typu Hello World v jazyce C. Ze stromu je patrné, že každý uzel má svůj typ, od kterého se odvíjí jeho další atributy. Kořenem stromu je kompilační jednotka "hello.c" s atributy lowPC a highPC. Kdykoliv se vykonávání programu zastaví na instrukci s adresou mezi těmito dvěma atributy, jedná se o instrukci generovanou z této kompilační jednotky. V rámci této kompilační jednotky je definována pouze jediný podprogram "main" s návratovou hodnotou typu "int". Pokud by bylo podprogramů více, lze opět konkrétní podprogram určit za pomocí atributů lowPC a highPC a adresy aktuální instrukce. Datový typ "int" je definován jako základní znaménkový typ s velikostí 4 byty.
+Na obrázku \ref{fig:dwarf} lze vidět DWARF strom vygenerovaný pro jednoduchý program typu Hello World v jazyce C. Ze stromu je patrné, že každý uzel má svůj typ, od kterého se odvíjí jeho další atributy. Kořenem stromu je kompilační jednotka "hello.c" s atributy lowPC a highPC. Kdykoliv se vykonávání programu zastaví na instrukci s adresou mezi těmito dvěma atributy, jedná se o instrukci generovanou z této kompilační jednotky. V rámci této kompilační jednotky je definován pouze jediný podprogram "main" s návratovou hodnotou typu "int". Pokud by bylo podprogramů více, lze opět konkrétní podprogram určit za pomocí atributů lowPC a highPC a adresy aktuální instrukce. Datový typ "int" je definován jako základní znaménkový typ s velikostí 4 byty.
 
 \begin{figure}[ht]
 \centering
@@ -165,8 +165,8 @@ Na obrázku \ref{fig:dwarf} lze vidět DWARF strom vygenerovaný pro jednoduchý
 
 Formát DWARF definuje velké množství typů uzlů a jejich atributů. Z hlediska simulátorů je však důležité popsat ještě uložení proměnných. Proměnné mají krom svého jména a typu ještě lokaci. Ta definuje, kde se nachází hodnota proměnné. Adresa proměnné se však může během běhu programu měnit - někdy bude výhodné mít proměnnou v registru, jindy v paměti, nebo dokonce z části v registru a z části v paměti. Proto je lokace proměnné ve formátu DWARF většinou definována v závislosti na adrese aktuální instrukce v takzvaném seznamu lokací.
 
-Seznam lokací obsahuje pro každou proměnnou její lokaci v závislosti na adrese aktuální instrukce. Každá lokace je pak tvořena kódem zásobníkového automatu se speciálními mikroinstrukcemi, po jehož vykonání je na jeho vrcholu buď hodnota proměnné, číslo registru ve kterém se hodnota nachází nebo
-adresa do paměti.
+Seznam lokací obsahuje pro každou proměnnou její lokaci v závislosti na adrese aktuální instrukce. Každá lokace je pak tvořena kódem zásobníkového automatu se speciálními mikroinstrukcemi, po jehož vykonání je na jeho vrcholu buď samotná hodnota proměnné, číslo registru ve kterém se hodnota nachází nebo
+adresa místa v paměti, kde hodnotu najdeme.
 
 K získání těchto informací z ELF souboru lze opět použít nástroj objdump.
 
@@ -182,14 +182,13 @@ Je zde také zmíněno grafické uživatelské rozhraní simulátoru.
 Simulátor je jádrem celého projektu. Umožní propojení jednotlivých simulovaných komponent (jednoho mikrokontroleru a více periferií), řízení simulace
 a přeposílání zpráv mezi komponentami.
 
-Simulace bude založena na formalismus spojovaného DEVS (coupled DEVS). Bude se tedy jednat o diskrétní simulaci (discrete-event simulation) 
+Simulace bude založena na formalismu spojovaného DEVS (coupled DEVS). Bude se tedy jednat o diskrétní simulaci (discrete-event simulation) 
 modelující chod systému jako diskrétní sled událostí v čase. Každá událost se objevuje v konkrétním časovém okamžiku a značí změnu stavu v systému.
 Mezi dvěma po sobě jdoucími událostmi se nepředpokládá žádná změna systému, takže simulace může přímo přeskočit v čase z jedné události na druhou.
 
 \subsection{Komponenty}
 
-Komponenty jsou navrženy jako samostatné moduly s pevně daným rozhraním, pomocí kterého komunikují s ostatními komponentami simulace. Návrh je
-tak velmi obecný a umožňuje přidávání dalších rozšiřujících komponent.
+Komponenta je nejmenší simulovatelná část systému. Komponenty jsou navrženy jako samostatné moduly s pevně daným rozhraním, pomocí kterého komunikují s ostatními komponentami simulace. Návrh je tak velmi obecný a umožňuje přidávání dalších rozšiřujících komponent.
 Návrh počítá se dvěma typy komponent:
 
 \begin{itemize}
@@ -224,11 +223,11 @@ výstupní port hodnotu 3.3 (tzv. 3.3 voltu), bude tato zprávy předána na vst
 \section{Návrh komponenty simulující MCU MSP430}
 
 Komponenta simulující mikrokontroler MSP430 je klíčovou komponentou projektu. Bude umožňovat nahrání uživatelského programu a jeho
-následnout simulaci na základě vykonávání instrukcí a běhu svých dalších interních komponent. Umožní grafickému uživatelskému
+následnou simulaci pomocí vykonávání instrukcí a běhu svých dalších interních komponent. Umožní grafickému uživatelskému
 rozhraní přístup ke své paměti a registrům, čímž umožní krokování programů. Bude také poskytovat další ladící informace jako je například
 umístění lokálních a globálních proměnných v paměti nebo v registrech. \cite{cvs}
 
-Na obrázku \ref{fig:msp430_arch} lze vidět základní schéma MSP430 komponenty a její dekompozici. V této kapitole jsou jednotlivé části tohoto schématu podrobněji rozebrány s důrazem na jejich funkce a postavení v rámci celé MSP430 komponenty.
+Na obrázku \ref{fig:msp430_arch} lze vidět základní schéma MSP430 komponenty a její dekompozici. V této podkapitole jsou jednotlivé části tohoto schématu podrobněji rozebrány s důrazem na jejich funkci a postavení v rámci celé MSP430 komponenty.
 
 \begin{figure}[ht]
 \centering
@@ -239,28 +238,29 @@ Na obrázku \ref{fig:msp430_arch} lze vidět základní schéma MSP430 komponent
 
 \subsection{Paměť}
 
-Paměť slouží k uchování jak uživatelského programu tak dat. Ostatní části mikrokontroléru (zejména pak interní periferie jako například USI nebo USCI) musí být schopny do paměti zapisovat jak slova tak jednotlivé byty a být informovány o případném čtení nebo zápisu provedeném uživatelským programem. To je podstatná vlastnost například pro automatické smazání příznaku přerušení po jeho přečtení. Dalším možným využitím informování zápisu do paměti je možnost zastavení simulace po změně hodnoty v paměti a tím lepší možnost ladit uživatelský program.
+Paměť slouží k uchování jak uživatelského programu tak dat. Ostatní části mikrokontroleru (zejména pak interní periferie jako například USI nebo USCI) musí být schopny do paměti zapisovat jak slova tak jednotlivé byty a být informovány o případném čtení nebo zápisu provedeném uživatelským programem. To je podstatná vlastnost například pro automatické smazání příznaku přerušení po jeho přečtení. Dalším možným využitím informování o zápisu do paměti je možnost zastavení simulace po změně hodnoty v paměti a tím lepší možnost ladit uživatelský program.
+
+Do paměti musí být umožněno načtení uživatelského programu ve formátu A43. Načítání programu z ELF souboru bude probíhat jeho převodem na formát A43 a následným načtením.
 
 \subsection{Registry}
 
 Registry jsou 16 bitové a mikrokontroler MSP430 jich obsahuje 16. Návrh registrů, podobně jako návrh paměti, počítá s možností čtení a zápisu jednoho nebo dvou bytů. Opět je potřeba umožnit ostatním částem mikrokontroléru zjistit, že došlo k zápisu do registru. Typickým předpokládaným využitím je krokování
-programu na základě PC registru.
+programu na základě hodnoty PC registru. Další možné využití může být monitorování stavového registru a zastavení simulace při určitém příznaku.
 
 \subsection{Přepínač pinů}
 
-Každá varianta mikrokontroleru obsahuje různé interní periferie a tím pádem i jiný počet pinů a jejich rozmístění. Na jeden pin může být zapojeno více interních periferií a to, která periferie právě daný pin obsluhuje, je určeno na základě registrů (například PxSEL a PxSEL2).
+Každá varianta mikrokontroleru obsahuje různé interní periferie a tím pádem i jiný počet pinů a jejich rozmístění na pouzdru mikrokontroleru. Na jeden pin může být zapojeno více interních periferií a to, která periferie právě daný pin obsluhuje, je určeno na pomocí řídících registrů (například PxSEL a PxSEL2).
 
 Každá varianta mikrokontroleru MSP430 bude z hlediska pinů a jejich připojení na interní periferie popsána v XML souboru, který bude obsahovat o každém
 pinu následující informace:
 
 \begin{itemize}
 \item Umístění pinu na pouzdru mikrokontroleru (vlevo, vpravo, ...) včetně jeho pořadí na dané straně pouzdra.
-\item Seznam názvů vstupů/výstupu realizovaných pomocí pinu a hodnoty bitů v registrech určujících, který vstup/výstup bude kdy zvolen.
+\item Seznam názvů vstupů/výstupu realizovaných pomocí pinu a hodnoty bitů v řídících registrech určujících, který vstup/výstup bude kdy zvolen.
 \end{itemize}
 
-
-Interní komponenty budou mít zaregistrovány v přepínači pinů názvy svých vstupů a výstupů.
-Přepínač pinů pak bude na základě aktuální simulované varianty monitorovat registry PxSEL, PxSEL2, ... a na základě jejich hodnoty přeposílat vstupy z externích komponent konkrétním interním periferiím (princip multiplexoru). Tento princip lze vidět na obrázku \ref{fig:msp430_pinmult}.
+Interní komponenty (například časovač nebo modul USI) budou mít zaregistrovány v přepínači pinů názvy svých vstupů a výstupů.
+Přepínač pinů pak bude na základě aktuálně simulované varianty MSP430 mikrokontroleru monitorovat řídící registry PxSEL, PxSEL2, atd. a podle jejich hodnoty přeposílat vstupy z externích komponent konkrétním interním periferiím (princip multiplexoru). Tento princip ilustruje obrázek \ref{fig:msp430_pinmult}.
 
 \begin{figure}[h]
 \centering
@@ -269,30 +269,28 @@ Přepínač pinů pak bude na základě aktuální simulované varianty monitoro
 \label{fig:msp430_pinmult}
 \end{figure}
 
-Přepínač pinů bude rovněž směrovat signály uvnitř MSP430 komponenty. Typickým použitím této vlastnosti bude interní propojení jednotlivých interních periferií (Například výstup časovače může být použit jako vstup modulu USI).
+Přepínač pinů bude rovněž směrovat signály uvnitř MSP430 komponenty. Toto bude potřeba pro interní propojení jednotlivých interních periferií (například výstup časovače může být použit jako vstup modulu USI - toto propojení se děje uvnitř MSP430 komponenty bez využití externích pinů).
 
 \subsection{Zdroje hodin}
 
-Z hlediska simulace je možné zdroje hodin rozdělit na dvě kategorie. Zdroje závislé na externích komponentách (LFXT1CLK, XT2CLK) a zdroje závislé pouze na čase (VLOCLK, DCOCLK).
+Zdroje hodin budou generovat hodinový signál o určité frekvenci. Tento signál pak bude sloužit samotným hodinám pro řízení jednotlivých částí mikrokontroleru. Z hlediska simulace je možné zdroje hodin rozdělit na dvě kategorie. Zdroje závislé na externích komponentách (LFXT1CLK, XT2CLK) a zdroje závislé pouze na čase (VLOCLK, DCOCLK).
 
 Zdroje závislé na externích komponentách musí být schopny přijímat zprávy od externích komponent a na jejich základě pak generovat hodinový signál, který je dále zpracován jednotlivými hodinami.
 
-Zdroje závislé na čase musí být samostatnými simulačními (DEVS) komponentami a musí samy
-na základě uběhnutého času generovat hodinový signál s patřičnou frekvencí.
+Zdroje závislé na čase musí být samostatnými simulačními (DEVS) komponentami a musí samy na základě uběhnutého času generovat hodinový signál s patřičnou frekvencí.
 
-Všechny zdroje hodin musí generovat informace jak o náběžné, tak o sestupné hraně hodinového signálu. To je podstatná vlastnost například pro modul USI, který provádí své akce jak s náběžnou tak sestupnou hranou.
+Všechny zdroje hodin musí generovat informace jak o náběžné, tak o sestupné hraně hodinového signálu. To je podstatná vlastnost například pro modul USI, který provádí své akce jak s oběma hranami hodinového signálu.
 
 \subsection{Hodiny}
 
-Hodiny (MCLK, SMCLK a ACLK) dále zpracovávají hodinový signál od zdrojů hodinového signálu. Umožňují nastavit děličku, čímž mění frekcenci hodinového signálu. K jednotlivým hodinám jsou pak připojeny periferi, které jsou hodinami řízeny. Stejně jako u zdrojů hodinového signálu je potřeba u zdrojů hodin
-poskytovat informace jak o náběžné tak o sestupné hraně.
+Hodiny (MCLK, SMCLK a ACLK) dále zpracovávají hodinový signál od zdrojů hodinového signálu. Umožňují nastavit děličku, čímž mění frekcenci hodinového signálu. K jednotlivým hodinám budou připojeny interní periferie, které jimi budou řízeny. Stejně jako u zdrojů hodinového signálu je potřeba u zdrojů hodin poskytovat informace jak o náběžné tak o sestupné hraně.
 
 \subsection{Správce přerušení}
 
 Správce přerušení bude udržovat informace o požadavcích na přerušení. Modulu zpracovávajícímu instrukce umožní spustit rutinu přerušení, pokud je nějaké
 přerušení ve frontě. Ostatním periferiím pak umožní žádat o přerušení.
 
-Periferie budou rovněž vyžadovat informaci o dokončení konkrétního typu přerušení (například vymazání indikátoru přerušení po jeho obsluze).
+Periferie budou rovněž potřebovat informaci o dokončení konkrétního typu přerušení (například pro vymazání příznaku přerušení po jeho obsluze).
 
 \subsection{Zpracování instrukcí}
 
@@ -312,20 +310,19 @@ Po vykonání instrukce je potřeba obsloužit jakákoliv přerušení, která m
 
 \subsection{Interní periferie}
 
-Interní periferi budou využívat modulů popsaných dříve v této kapitole. Každá interní perifer tak bude mít přístup k paměti, registrům, pinům, správci
+Interní periferie budou využívat modulů popsaných dříve v této kapitole. Každá interní perifer tak bude mít přístup k paměti, registrům, pinům, správci
 přerušení a hodinovému signálu. V rámci diplomové práce bude z interních periferií implementován časovač, modul USI a USCI.
 
 Jako příklad návrhu interní periferie se tato podkapitola věnuje pouze časovači. Princip návrhu ostatních periferií je však obdobný, liší se pouze jejich funkcí.
 
 \subsubsection{Časovač}
 
-Časovač bude monitorovat své registry prostřednictvím paměťového modulu a v případě jejich změny, způsobené uživatelským programem, změní také své nastavení
-(výběr módu, vstupů atd.). Pro generování nastavení Capture overflow bitu (indikace situace, kdy uživatelský program nestihl přečíst hodnotu časovače během 2 přerušení) je potřeba informace, zda uživatelský program přečetl aktuální hodnotu časovače. To bude řešeno opět pomocí paměťového modulu, kdy tento bude informovat časovač o přečtení dané hodnoty z paměti.
+Časovač bude monitorovat své řídící registry prostřednictvím paměťového modulu a v případě jejich změny, způsobené uživatelským programem, změní také své nastavení (výběr módu, vstupů atd.). Pro generování nastavení Capture overflow bitu (indikace situace, kdy uživatelský program nestihl přečíst hodnotu časovače během 2 přerušení) je potřeba vědět, zda uživatelský program přečetl aktuální hodnotu časovače. To bude řešeno opět pomocí paměťového modulu, kdy tento bude informovat časovač o přečtení dané hodnoty z paměti.
 
-Časovač musí být schopen zvyšovat svoji hodnotu v závislosti na frekvenci. Proto bude časovač napojen na modul hodin (SMLK nebo ACLK). Z každým cyklem
+Časovač musí být schopen zvyšovat svoji hodnotu v závislosti na frekvenci. Proto bude časovač napojen na modul hodin (SMLK nebo ACLK). S každým cyklem
 hodin pak v závislosti na svém nastavení vykoná danou funkci.
 
-Pomocí časovače lze rovněž generovat pulsy na výstupních pinech umístěných na pouzdře mikrokontroleru a reagovat na změnu napětí na pinech vstupních.
+Pomocí časovače lze rovněž generovat pulsy na výstupních pinech umístěných na pouzdře mikrokontroleru a vzorkovat napětí na pinech vstupních.
 Je proto nutné umožnit časovači přístup k těmto pinům. To bude provedeno pomocí přepínače pinů. Časovač si zaregistruje potřebné názvy vstupů a výstupů
 a přepínač pinů pak v závislosti na akcích uživatelského programu bude směrovat vstupy mikrokontroleru přímo do časovače.
 
@@ -337,7 +334,7 @@ Z příkladu časovače lze vidět, že návrh a dekompozice mikrokontroleru MSP
 
 \section{Návrh grafického uživatelského rozhraní}
 
-Hlavní funkcí grafického uživatelského rozhraní je řízení simulace, jednoduchá editace jednotlivých simulovaných komponent a lazení programu mikrokontroleru.
+Hlavní funkcí grafického uživatelského rozhraní bude řízení simulace, jednoduchá editace jednotlivých simulovaných komponent a lazení programu mikrokontroleru.
 
 Grafické uživatelské rozhraní by tedy mělo mít následující funkce:
 
@@ -361,7 +358,7 @@ vodičů a měnit jejich vlastnosti (například barvu LED diody). Během simula
 
 Další důležitou částí grafického uživatelského rozhraní bude zobrazení zdrojového kódu programu nahraného v mikrokontroleru. Tento kód bude poskytnut
 přímo mikrokontrolerem a GUI jej pouze zobrazí. Z principu lze vždy zobrazit kód v assembleru. Pokud však bude dostupný zdrojový kód v jazyce C, bude 
-simulátor schopen přepínat mezi kódem v assembleru a kódem v C. Po zastavení simulace se zobrazí aktuální instrukce (případně odpovídající příkaz v jazyce C). Uživatelské rozhraní bude rovněž umožňovat stanovení breakpointů (bodů zastavení) na jednotlivých instrukcích, čímž umožní jednodušší krokování
+simulátor schopen přepínat mezi kódem v assembleru a kódem v C. Po zastavení simulace se zobrazí aktuální instrukce (případně odpovídající příkaz v jazyce C). Uživatelské rozhraní bude rovněž umožňovat nastavení breakpointů (bodů zastavení) na jednotlivých instrukcích, čímž umožní jednodušší krokování
 simulace.
 
 Pro zobrazení interních informací o jednotlivých simulovaných komponentách bude sloužit třetí část uživatelského rozhraní. Půjde o strukturovaný seznam
@@ -379,6 +376,9 @@ Při vytvoření nového projektu bude uživatel dotázán na vybrání jeho arc
 Při uložení projektu bude potřeba uložit informace o všech komponentech, jejich propojení a umístení na kreslící ploše. Budou se rovněž ukládat informace
 o aktuálně používaných breakpointech a sledovaných pinech.
 
+\subsection{Editace projektu}
+
+Editace projektu bude probíhat pomocí kreslící plochy zobrazující všechny komponenty. Na kreslící plochu bude možné přidávat nové periferie ze seznamu periferií, případně ostraňovat periferie stávající. Uživateli bude umožněno periferiemi volně pohybovat po kreslící ploše a propojovat jejich piny pomocí vodičů. Bude možné propojit i více než 2 piny (lze tak vytvořit sběrnicovou topologii s uzly). Propojení mezi piny bude možné odstraňovat.
 
 \subsection{Řízení simulace}
 
@@ -390,14 +390,14 @@ K dispozici bude také funkce pro krokování programu s následujícími 3 mód
 \begin{itemize}
 \item \textbf{Událost simulace} - Provede další událost v simulaci. Jedná se například o jeden tik hodin MCLK, nebo 1 tik externího oscilátoru. Jedna událost je nejmenší možný krok, jaký lze v diskrétní simulaci provést.
 \item \textbf{Instrukce} - Provede další instrukci mikrokontroleru. Instrukce zpravidla trvá více simulačních kroků, půjde tedy o méně jemné krokování simulace.
-\item \textbf{Řádek v jazyce C} - Provádí instrukce mikrokontroleru, dokud tyto implementují stále tentýž řádek v zdrojovém souboru v jazyce C. Při volbě tohoto krokování musí být výsledná aplikace schopna detekovat cykly (například 1 instrukce NOP), aby nedošlo k zamrznutí simulace při vykonávání kroku.
+\item \textbf{Řádek v jazyce C} - Provádí instrukce mikrokontroleru, dokud tyto implementují stále tentýž řádek v zdrojovém souboru v jazyce C. Při volbě tohoto krokování musí být výsledná aplikace schopna detekovat cykly (například 1 instrukce NOP opakující se stále dokola ve smyčce), aby nedošlo k zamrznutí simulace při vykonávání kroku.
 \end{itemize}
 
-Další možnosti pozastavení simulace jsou takzvané breakpointy. Uživatel musí umět nastavit pozastavení simulace v případě, kdy určitý registr nabyl jím definovanou hodnotu (případně když hodnota v paměti definovaná adresou nabyla konkrétni hodnotu).
+Další možností pozastavení simulace jsou takzvané breakpointy. Uživatel musí umět nastavit pozastavení simulace v případě, kdy určitý registr nabyl jím definovanou hodnotu (případně když hodnota v paměti definovaná adresou nabyla konkrétni hodnotu).
 
 \subsection{Lazení programu}
 
-Při každém pozastavení simulace uvidí uživatel aktuální instrukci ve zdrojovém kódu. Kromě samotného zdrojového kódu mu budou zobrazeny názvy všech zdrojových souborů nahraného programu a všech funkcí v daných souborech. Uživatel bude moci vybrat daný soubor a funkci v něm pro rychlejší orientaci v projektu. V případě dostupnosti zdrojového kódu v jazyce C se uživateli zobrazí tento kód. Bude však možné zobrazit diassemblovaný kód v assembleru. Uživatel bude moci přidávat breakpointy v libovolných místech kódu a po opětovném spuštění simulace se tato zastaví na místě, které uživatel zvolil.
+Při každém pozastavení simulace uvidí uživatel aktuální instrukci ve zdrojovém kódu. Kromě samotného zdrojového kódu mu budou zobrazeny, pokude byl nahrán program ve formátu ELF s ladícími symboly, názvy všech zdrojových souborů nahraného programu a všech funkcí v daných souborech. Uživatel bude moci vybrat daný soubor a funkci v něm pro rychlejší orientaci v projektu. V případě dostupnosti zdrojového kódu v jazyce C se uživateli zobrazí tento kód. Bude však možné zobrazit diassemblovaný kód v assembleru. Uživatel bude moci přidávat breakpointy v libovolných místech kódu a po opětovném spuštění simulace se tato zastaví na místě, které uživatel zvolil.
 
 V grafickém uživatelském rozhraní budou rovněž zobrazeny hodnoty registrů a důležitých adres v paměti (standardně hexadecimálně, avšak bude možné zobrazit jejich hodnoty i v jiných soustavách). Uživatel bude moci použít tento seznam registrů a míst v paměti pro rychlé přidání nových breakpointů. Na základě místa ve zdrojovém kódu, na kterém došlo k pozastavení simulace, budou zobrazeny jména a hodnoty lokálních proměnných.
 
