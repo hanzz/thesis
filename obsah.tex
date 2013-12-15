@@ -1,3 +1,36 @@
+% 
+% Pekny den,
+% 
+% konecne jsem se dostal k precteni textu. Mam v soucasne dobe nasledujici
+% poznamky:
+% 1) od druheho odstavce kap. 3 bych z toho udelal podkapitolu "UVOD"
+% 2) po uvodu bych dal schema blokove a soucasny 4. odstavec trosku rozvedl
+% 3) lepe formulovat vsechny instrukce jsou => Instrukce jsou kodovany
+% pomoci 16, 32 nebo 48 bitu pricemz operacni kod je situovan vzdy v
+% prvnich 16 bitech.
+% 4) kap 3 lepe clenit - periferie dat do podkapitoly napr. Zakladni
+% periferie; at je z obsahu zrejme, ze se zabyvate IS, periferiemi, apod
+% 5) kap 4  by  bylo vhodne prejmenovat, aby bylo zrejme, ze budete
+% popisovat obecne platnou zalezitost; nicmene pokud by mel rozsah zustat
+% spise maly, lepsi by bylo text pridat do kapitoly zabyvajici se
+% navrhem/implementaci ci jinam
+% DONE 6) kap 5 - vystizneji nazvat - napr. "Navrh udalostne rizeneho simulatoru"
+% DONE 7) Cílem této kapitoly je návrh simulátoru => Cílem této kapitoly je
+% popsat strukturu navrzeneho simulatoru
+% 8) Pred kapitolu 5 bych dal kapitolu "Udalostne rizena simulace" a do ni
+% rozebral a) co to je a b) existujici systemy vcetne DEVS; v kapitole 5
+% se jen odkazat,ze to bude vyuzito
+% 9) v ramci kap 5 bych asi nazyval komponentu msp430 simulacnim jadrem,
+% ale to je spise k diskusi
+% 10) kap 5 by mela zacit "Struktura navrzeneho simulatoru", kde by se
+% zminilo jadro + rozsireni (podpora pro periferie) + nad tim GUI; teprve
+% pote se zabyvat popisem jednotlivych casti
+% 11) zatim bych text v kap5 nechal byt a jakmile si budete myslet, ze je
+% kompletni, detailne bych jej procetl a napsal pripominky; nyni se mi
+% zda, ze tam je spoustu informaci, ale chtelo by je to trosku utribit
+%       chtelo by to napsat zminku, ktere mechanismy se budou z DEVS
+% pouzivat (nikoliv vsak uplne detaily - ty budou az v implementaci) -
+% napr. "Komponenty budou ke komunikaci vyuzivat ...."
 
 \chapter{Úvod}
 
@@ -13,11 +46,13 @@ vestavěné (embedded) systémy.
 
 Mikrokontroler MSP430 je postaven na von Neumannově architektuře (má tedy společnou paměť pro data i program). Paměť je adresována po bytech složených z 8 bitů a páry bytů tvoří 16bitové little-endian slova.
 
+\section{Mikroprocesor}
+
 Mikrokontrolery rodiny MSP430 obsahují 16bitový mikroprocesor (CPU) a 16 registrů, každý o kapacitě 16 bitů. První čtyři registry mají speciální účel. Registr R0 slouží jako ukazatel na aktuální instrukci (PC - program counter). Register R1 ukazuje na vrchol zásobníku (SP - stack pointer). Register R2 je stavovým registrem (SR - status register) obsahující informace o stavu mikroprocesoru. Register R3 je použit pro generování často používaných konstant, takže je není potřeba načítat z paměti. Ostatní registry je možné volně využít v uživatelském programu.
 
 Nejdůležitějšími stavovými bity ve stavovém registru jsou bity N (nastaven pokud je výsledek operace negativní), Z (nastaven pokud je výsledek operace nulový), C (nastaven pokud došlo k přenosu nejvyššího bitu) a V (nastaven pokud došlo při operaci k přetečení).
 
-\section{Instrukční sada}
+\subsection{Instrukční sada}
 
 Instrukční sada obsahuje 27 instrukcí. Všechny instrukce jsou 16 bitů dlouhé. V závislosti na adresovém módu však za nimi moho následovat až 2 slova operandů (typicky adres).
 
@@ -75,7 +110,7 @@ Podmíněné instrukce jsou typicky instrukce skoků, které provedou skok pouze
 
 Každá instrukce potřebuje ke svému vykonání určitý počet hodinových cyklů. Zpravidla potřebuje instrukce 1 cyklus pro každý přístup do paměti. Z tohoto pravidla však existuje několik vyjímek popsaných v dokumentaci k mikrokontrolerům MSP430.
  
-\section{Adresové módy}
+\subsection{Adresové módy}
 
 Mikrokontroler MSP430 pracuje se 7 adresovými módy pro zdrojový operand a 4 adresovými módy (první 4 módy následujícího seznamu) pro operand cílový:
 
@@ -90,13 +125,15 @@ Mikrokontroler MSP430 pracuje se 7 adresovými módy pro zdrojový operand a 4 a
 \end{itemize}
 
 
-\section{Přerušení}
+\subsection{Přerušení}
 
 Přerušení umožňují přerušit běh uživatelského programu při určité události. Po příchodu přerušení je vyvolána rutina obsluhující přeružené na základě její adresy ve vektoru přerušení. Po obsloužení přerušení mikroprocesor pokračuje dále ve vykonávaní uživatelského programu.
 
 Přerušení mají své pevně dané priority. Pokud nastane více žádostí o přerušení, je přednostně obsloužena žádost o přerušení s vyšší prioritou.
 
-\section{Základní hodinový modul}
+\section{Základní periferie}
+
+\subsection{Základní hodinový modul}
 
 Jednou ze základních periferií mikrokontroleru rodiny MSP430 je základní hodinový modul (Basic Clock Module). Poskytuje hodinový signál pro mikroprocesor a periferie mikrokontroleru. Ve většině variant mikrokontroleru MSP430 jsou v rámci hodinového modulu implementovány 4 možné zdroje hodin:
 
@@ -115,7 +152,7 @@ Tyto zdroje hodin lze pak použít jako vstup ve 3 zdrojích hodinového signál
 \item \textbf{ACLK} - Pomocné hodiny (Auxiliary clock). Jako zdroj může být použit pouze LFXT1CLK nebo VLOCLK.
 \end{itemize}
 
-\section{Časovač}
+\subsection{Časovač}
 
 \chapter{Formáty uložení spustitelného kódu}
 
@@ -170,11 +207,14 @@ adresa místa v paměti, kde hodnotu najdeme.
 
 K získání těchto informací z ELF souboru lze opět použít nástroj objdump.
 
+\chapter{Událostně řízená simulace}
 
-\chapter{Návrh}
+
+
+\chapter{Návrh událostně řízeného simulátoru}
 \label{navrh}
 
-Cílem této kapitoly je návrh simulátoru, jeho rozhraní pro komunikaci s periferiemi a mikrokontrolery a knihovny implementující mikrokontroler MSP430.
+Cílem této kapitoly je popsat strukturu navrženého simulátoru, jeho rozhraní pro komunikaci s periferiemi a mikrokontrolery a knihovnu implementující mikrokontroler MSP430.
 Je zde také zmíněno grafické uživatelské rozhraní simulátoru.
 
 \section{Návrh simulátoru}
