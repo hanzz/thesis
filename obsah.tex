@@ -10,7 +10,7 @@
 % prvnich 16 bitech.
 % DONE 4) kap 3 lepe clenit - periferie dat do podkapitoly napr. Zakladni
 % periferie; at je z obsahu zrejme, ze se zabyvate IS, periferiemi, apod
-% 5) kap 4  by  bylo vhodne prejmenovat, aby bylo zrejme, ze budete
+% DONE 5) kap 4  by  bylo vhodne prejmenovat, aby bylo zrejme, ze budete
 % popisovat obecne platnou zalezitost; nicmene pokud by mel rozsah zustat
 % spise maly, lepsi by bylo text pridat do kapitoly zabyvajici se
 % navrhem/implementaci ci jinam
@@ -38,16 +38,20 @@ Mikrokontrolery (MCU) jsou monolitické integrované obvody obsahující mikropr
 rozšiřující jeho funkčnost. Vyznačují se jednoduchostí, kompaktností a malou spotřebou. Používají se tak proto především pro jednoúčelová zařízení a 
 vestavěné (embedded) systémy.
 
-Při návrhů vestavěných systémů je v praxi často používána simulace. Díky využití simulátoru daného mikrokontroleru (případně celého vestavěného systému) lze ověřit funkčnost systému již při jeho návrhu aniž by bylo nutné vynaložit náklady na prvotní prototypy. Simulační čas lze zrychlit nebo naopak zpomalit a tím jednodušeji prozkoumat vybrané jevy. Simulace může rovněž zjednodušit hledání problémů viděných na reálném hardwaru, kdy jejich příčiny nelze prostým zkoumáním reálného systému jednoduše odhalit. Při použití simulace je také jednodušší vyzkoušet případné změny systému a zkoumat nové postupy bez dalšího zvýšení nákladů. Nejen z těchto důvodů je tedy simulace vestavěných systémů užitečná a má smysl se jí zabývat.
+Při návrhu vestavěných systémů je v praxi často používána simulace. Díky využití simulátoru daného mikrokontroleru (případně celého vestavěného systému) lze ověřit funkčnost systému již při jeho návrhu aniž by bylo nutné vynaložit náklady na prvotní prototypy. Simulační čas lze zrychlit nebo naopak zpomalit a tím jednodušeji prozkoumat vybrané jevy. Simulace může rovněž zjednodušit hledání problémů viděných na reálném hardwaru, kdy jejich příčiny nelze prostým zkoumáním reálného systému jednoduše odhalit. Při použití simulace je také jednodušší vyzkoušet případné změny systému a zkoumat nové postupy bez dalšího zvýšení nákladů. Nejen z těchto důvodů je tedy simulace vestavěných systémů užitečná a má smysl se jí zabývat.
 
 Tato semestrální práce si dává za cíl návrh jednoduše rozšiřitelného pokročilého simulátoru mikrokontrolerů rodiny MSP430 od výrobce Texas Instruments. Tyto mikrokontrolery jsou hojně rozšířené především díky své nízké ceně, malé spotřebě a jednoduchosti práce s nimi. Lze je nalézt například i v platformě FITkit používané k výukovým účelům Fakultou informačních technologií Vysokého učení technického v Brně. Simulátor navrhovaný v této práci je navrhován právě jako doplňující prostředek pro vývoj aplikací pro tuto platformu, avšak bude moci být použit i samostatně. V současné době není obdobný software pod svobodnou licencí dostupný.
+
+Tento semestrální projekt je rozdělen do pěti kapitol.
+
+První kapitola obsahuje úvod. Dále následuje kapitola stručně popisující strukturu mikrokontroleru MSP430, jeho instrukční sadu, základní interní periferie a formáty používané pro uložení binárního kódu tohoto mikrokontroleru. Třetí kapitola se zabývá událostně řízenou simulací, konkrétně pak formalismem DEVS. Ve čtvrté kapitole je proveden samotný návrh simulátoru. Na závěr je navržený simulátor zhodnocen.
 
 % Mikrokontroler MSP430, kterého se táto práce týká, je postaven na von Neumannově architektuře (má tedy společnou paměť pro data i program). Paměť je adresována po bytech složených z 8 bitů a páry bytů tvoří 16bitové little-endian slova.
 
 
 \chapter{Mikrokontroler MSP430}
 
-Tato kapitola stručně shrnuje základy architektury mikrokontrolerů rodiny MSP430. Nesnaží se však kompletně nahradit jejich dokumentaci, ačkoliv z ní vychází. Pro návrh a implementaci kompletního simulátoru nejsou informace v této kapitole dostačující, ale byly vybrány s ohledem na úvod do problematiky mikrokontrolerů MSP430 a pochopení následujících kapitol a činnosti navrhovaného simulátoru.
+Tato kapitola stručně shrnuje základy architektury mikrokontrolerů rodiny MSP430. Nesnaží se však kompletně nahradit jejich dokumentaci \cite{msp430family} \cite{msp430book}, ačkoliv z ní vychází. Pro návrh a implementaci kompletního simulátoru nejsou informace v této kapitole dostačující, ale byly vybrány s ohledem na úvod do problematiky mikrokontrolerů MSP430 a pochopení následujících kapitol a činnosti navrhovaného simulátoru.
 
 \begin{figure}[ht]
 \centering
@@ -108,7 +112,7 @@ Mikrokontroler MSP430 rozlišuje tyto instrukce se dvěma operandy a provádí s
 
 \subsubsection{Podmíněné instrukce}
 
-Podmíněné instrukce jsou typicky instrukce skoků, které provedou skok pouze při splnění určité podmínky (hodnoty konkrétního bitu ze statového registru). Zpravidla je před nimi volání instrukce CMP pro porovnání dvou hodnot a nastavení stavového registru. Opět je rozlišeno několik druhů podmíněných instrukcí:
+Podmíněné instrukce jsou typicky instrukce skoků, které provedou skok pouze při splnění určité podmínky (hodnoty konkrétního bitu ze stavového registru). Zpravidla je před nimi volání instrukce CMP pro porovnání dvou hodnot a nastavení stavového registru. Opět je rozlišeno několik druhů podmíněných instrukcí:
 
 \begin{itemize}
 \item \textbf{JNE/JNZ} - Provede skok pokud Z==0 (po zavolání CMP se 2 hodnoty nerovnají).
@@ -200,16 +204,16 @@ Hodnota časovače se mění v závislosti na zvoleném módu:
 
 Prvním módem je Capture mód. Časovač je v tomto módu připojen k externímu pinu. Pokud na pinu dojde ke změně logické hodnoty, dojde ke zkopírování aktuální hodnoty časovače do CCR registru a je vyvoláno přerušení. Lze tak například zjistit délku pulzu na vstupu.
 
-Pokud je Capture/Compare blok v Compare módu a hodnota časovače je rovna hodnotě CCR registru, je vygenerováno přerušení a na externí pin lze podle nastavené generovat výstup. Compare mód je využíván pro generování PWM signálu nebo pro generování pravidelných přerušení.
+Pokud je Capture/Compare blok v Compare módu a hodnota časovače je rovna hodnotě CCR registru, je vygenerováno přerušení a na externí pin lze podle nastavení generovat výstup. Compare mód je využíván pro generování PWM signálu nebo pro generování pravidelných přerušení.
 
 
-\chapter{Formáty uložení spustitelného kódu}
+\section{Formáty uložení spustitelného kódu}
 
-Tato kapitole shrnuje dva nejpoužívanější formáty pro uložení binárního kódu, který je nahráván do mikrokontrolerů. Jedná se o formáty Intel HEX (A43) a ELF. Je důležité se s nimi seznámit, protože je navrhovaný simulátor bude muset načítat a zpracovávat.
+Tato podkapitola shrnuje dva nejpoužívanější formáty pro uložení binárního kódu, který je nahráván do mikrokontrolerů. Jedná se o formáty Intel HEX (A43) a ELF. Je důležité se s nimi seznámit, protože je navrhovaný simulátor bude muset načítat a zpracovávat.
 
-\section{Intel HEX (A43)}
+\subsection{Intel HEX (A43)}
 
-Jedná se o jednoduchý textový formát obsahující jednotlivé byty programu, jejich umístení v paměti a adresu začátku programu. Na obrázku \ref{fig:intelhex} lze vidět okomentovanou ukázku formátu Intel HEX.
+Jedná se o jednoduchý textový formát obsahující jednotlivé byty programu, jejich umístění v paměti a adresu začátku programu. Formát byl specifikován roku 1988 firmou Intel \cite{intelhex}. Na obrázku \ref{fig:intelhex} lze vidět okomentovanou ukázku formátu Intel HEX.
 
 \begin{figure}[ht]
 \centering
@@ -218,29 +222,25 @@ Jedná se o jednoduchý textový formát obsahující jednotlivé byty programu,
 \label{fig:intelhex}
 \end{figure}
 
-Formát Intel HEX používá následujících 5 typů záznamu:
+Formát Intel HEX pro MSP430 používá následující 4 typy záznamu:
 
 \begin{itemize}
-\item \textbf{00} - Datový záznam.
+\item \textbf{00} - Datový záznam obsahující samotná data a 16bitovou adresu dat.
 \item \textbf{01} - Konec souboru.
-\item \textbf{02} - Segmentový záznam (nejprve MSB)
-\item \textbf{03} - Startovací záznam (adresa daná jako segment(16 bitů) a offset(16 bitů); nejprve MSB)
-\item \textbf{04} - Rozšířený adresový záznam (nejprve MSB)
-\item \textbf{05} - Startovací záznam (32bitová lineární adresa; nejprve MSB)
+\item \textbf{02} - Rozšiřující segmentový záznam (MSB). Je používán pouze v případě, kdy je potřeba adresovat více než 16 bity.
+\item \textbf{03} - Startovací záznam určující prvotní hodnotu PC registru (adresa daná jako segment (16 bitů) a offset (16 bitů); nejprve MSB)
 \end{itemize}
 
-\section{ELF}
+\subsection{ELF}
 
-Formát ELF (Executable and Linkable Format) je komplexní formát pro ukládání spustitelných souborů. Je rozšířen převážně na Unixových systémech. Formát ELF je základním výstupním formátem překladače GCC, který je často používán pro kompilování programů pro mikrokontroler MSP430. Kolem překladače GCC existuje řada dalších nástrojů, které umožňují získat z ELF souboru další informace aniž by musel programátor implementovat parser formátu ELF.
+Formát ELF (Executable and Linkable Format) je komplexní formát pro ukládání spustitelných souborů. Je rozšířen převážně na Unixových systémech. Formát ELF je základním výstupním formátem překladače GCC, který je často používán pro kompilování programů pro mikrokontroler MSP430. Kolem překladače GCC existuje řada dalších nástrojů, které umožňují získat z ELF souboru další informace aniž by musel programátor implementovat parser formátu ELF. \cite{elf}
 
 Jedním z těchto nástrojů je program objcopy umožňující převod z ELF formátu do jiných formátů. Lze jím převést soubor z formátu ELF do formátu Intel HEX, který lze snadněji zpracovat. Dalším nástrojem je nástroj objdump. Pomocí tohoto nástroje lze například disassemblovat program obsažený v ELF souboru.
 
-\subsection{DWARF - ladící informace}
+\subsubsection{DWARF - ladící informace}
 
-Klíčovou vlastností formátu ELF je však možnost uložení ladících informací ve formátu DWARF. Jedná se v podstatě o strom reprezentující celý výsledný
+Klíčovou vlastností formátu ELF je však možnost uložení ladících informací ve formátu DWARF. Popis DWARF formátu v této podkapitole vychází z \cite{dwarf}. Jedná se v podstatě o strom reprezentující celý výsledný
 program. Jednotlivé části programu (zdrojové soubory, funkce, globální a lokální proměnné, datové typy atd.) jsou uzly tohoto stromu. Debuggery (jako je například GDB) pak těchto informací využívají při ladění programu a umožňují zobrazovat detailní ladící informace jako je hodnota lokální proměnné nebo zdrojový kód dané funkce.
-
-Na obrázku \ref{fig:dwarf} lze vidět DWARF strom vygenerovaný pro jednoduchý program typu Hello World v jazyce C. Ze stromu je patrné, že každý uzel má svůj typ, od kterého se odvíjí jeho další atributy. Kořenem stromu je kompilační jednotka "hello.c" s atributy lowPC a highPC. Kdykoliv se vykonávání programu zastaví na instrukci s adresou mezi těmito dvěma atributy, jedná se o instrukci generovanou z této kompilační jednotky. V rámci této kompilační jednotky je definován pouze jediný podprogram "main" s návratovou hodnotou typu "int". Pokud by bylo podprogramů více, lze opět konkrétní podprogram určit za pomocí atributů lowPC a highPC a adresy aktuální instrukce. Datový typ "int" je definován jako základní znaménkový typ s velikostí 4 byty.
 
 \begin{figure}[ht]
 \centering
@@ -249,7 +249,9 @@ Na obrázku \ref{fig:dwarf} lze vidět DWARF strom vygenerovaný pro jednoduchý
 \label{fig:dwarf}
 \end{figure}
 
-Formát DWARF definuje velké množství typů uzlů a jejich atributů. Z hlediska simulátorů je však důležité popsat ještě uložení proměnných. Proměnné mají krom svého jména a typu ještě lokaci. Ta definuje, kde se nachází hodnota proměnné. Adresa proměnné se však může během běhu programu měnit - někdy bude výhodné mít proměnnou v registru, jindy v paměti, nebo dokonce z části v registru a z části v paměti. Proto je lokace proměnné ve formátu DWARF většinou definována v závislosti na adrese aktuální instrukce v takzvaném seznamu lokací.
+Na obrázku \ref{fig:dwarf} lze vidět DWARF strom vygenerovaný pro jednoduchý program typu Hello World v jazyce C. Ze stromu je patrné, že každý uzel má svůj typ, od kterého se odvíjí jeho další atributy. Kořenem stromu je kompilační jednotka "hello.c" s atributy lowPC a highPC. Kdykoliv se vykonávání programu zastaví na instrukci s adresou mezi těmito dvěma atributy, jedná se o instrukci generovanou z této kompilační jednotky. V rámci této kompilační jednotky je definován pouze jediný podprogram "main" s návratovou hodnotou typu "int". Pokud by bylo podprogramů více, lze opět konkrétní podprogram určit za pomocí atributů lowPC a highPC a adresy aktuální instrukce. Datový typ "int" je definován jako základní znaménkový typ s velikostí 4 byty.
+
+Formát DWARF definuje velké množství typů uzlů a jejich atributů. Z hlediska simulátorů je však důležité popsat ještě uložení proměnných. Proměnné mají kromě svého jména a typu ještě lokaci. Ta definuje, kde se nachází hodnota proměnné. Adresa proměnné se však může během běhu programu měnit - někdy bude výhodné mít proměnnou v registru, jindy v paměti, nebo dokonce z části v registru a z části v paměti. Proto je lokace proměnné ve formátu DWARF většinou definována v závislosti na adrese aktuální instrukce v takzvaném seznamu lokací.
 
 Seznam lokací obsahuje pro každou proměnnou její lokaci v závislosti na adrese aktuální instrukce. Každá lokace je pak tvořena kódem zásobníkového automatu se speciálními mikroinstrukcemi, po jehož vykonání je na jeho vrcholu buď samotná hodnota proměnné, číslo registru ve kterém se hodnota nachází nebo
 adresa místa v paměti, kde hodnotu najdeme.
@@ -258,11 +260,13 @@ K získání těchto informací z ELF souboru lze opět použít nástroj objdum
 
 \chapter{Událostně řízená simulace}
 
+Udáje v této kapitole popisující událostně řízenou simulaci vychází z \cite{nutaro}.
+
 Událostně řízená simulace modeluje simulovaný systém jako sled diskrétních událostí. Každá událost se odehrává v přesně stanoveném čase a mění celkový
 stav systému. Mezi jednotlivými událostmi se stav systému nemění a je tak možné zpracovávat po sobě jdoucí události bez ohledu na časový interval
 mezi nimi.
 
-Každá událostně řízená simulace ma svůj globální stav. Ten zahrnuje všechny proměnné a atributy studovaného systému. Globální stav se může v průběhu
+Každá událostně řízená simulace má svůj globální stav. Ten zahrnuje všechny proměnné a atributy studovaného systému. Globální stav se může v průběhu
 simulace měnit vykonáváním událostí. Simulace také udržuje aktuální hodnotu simulačního času pro správné plánování událostí.
 
 Další důležitou částí událostně řízené simulace je seznam událostí. V seznamu jsou události, které ještě nebyly zpracovány. Události jsou seřazeny
@@ -282,7 +286,7 @@ M=<X,Y,S,ta, \delta_{ext}, \delta_{int}, \lambda>
 \item $Y$ - množina výstupních událostí.
 \item $S$ - množina stavů.
 \item $ta:S \rightarrow \mathbb{T}^\infty$ - funkce posunu času definující dobu setrvání v daném stavu.
-\item $\delta_{ext}:Q \times X \rightarrow  S$ - funkce změny stavu určující jak vstupní událost změní stav systému, kde $Q=\{(s,t_e)|s \in S, t_e \in (\mathbb{T} \cap [0, ta(s)])\}$ je množina všech stavů a $t_e$ je čas uběhlů od poslední události.
+\item $\delta_{ext}:Q \times X \rightarrow  S$ - funkce změny stavu určující jak vstupní událost změní stav systému, kde $Q=\{(s,t_e)|s \in S, t_e \in (\mathbb{T} \cap [0, ta(s)])\}$ je množina všech stavů a $t_e$ je čas uběhlý od poslední události.
 \item $\delta_{int}:S \rightarrow S$ je funkce definující změnu stavu systému po uplynutí doby setrvání v daném stavu.
 \item $\lambda:S \rightarrow  Y^\phi$ je výstupní funkce, kde $Y^\phi=Y \cup \{\phi\}$ a $\phi \not\in Y$. Tato funkce definuje jak změna stavu systému, po uplynutí doby setrvání v něm, generuje výstupní událost.
 \end{itemize}
@@ -309,7 +313,7 @@ N=<X,Y,D,\{M_i\},C_{xx}, C_{yx}, C_{yy}, Select>
 \chapter{Návrh událostně řízeného simulátoru}
 \label{navrh}
 
-Cílem této kapitoly je popsat strukturu navrženého simulátoru, jeho rozhraní pro komunikaci s periferiemi a mikrokontrolery a knihovnu implementující mikrokontroler MSP430. Je zde také zmíněno grafické uživatelské rozhraní simulátoru.
+Cílem této kapitoly je popsat strukturu navrženého simulátoru, jeho rozhraní pro komunikaci s periferiemi a mikrokontrolerem a knihovnu implementující mikrokontroler MSP430. Je zde také zmíněno grafické uživatelské rozhraní simulátoru.
 
 \section{Struktura navrženého simulátoru}
 
@@ -321,17 +325,17 @@ Simulační jádro bude založeno na formalismu Spojovaného DEVS a bude umožň
 
 Simulační jádro bude sloužit k řízení simulace, přeposílání zpráv mezi komponentami a umožní propojení simulovaných komponent (jednoho mikrokontroleru a více periferií). Každá komponenta bude samostatným modulem a bude mít pevně dané rozhraní pro komunikaci s jinými komponentami vyplývající z atomického modelu formalismu DEVS.
 
-Vstupní a výstupní porty definované ve formalismu DEVS budou představovat jednotlivé piny komponent. Spojení mezi porty pak bude značit spojení jednolivých pinů a zprávy posílané mezi porty budou reprezentovat aktuální napětí na pinech.
+Vstupní a výstupní události definované ve formalismu DEVS budou chápány jako změny napětí na konkrétních pinech komponent. Propojení realizovaná pomocí Spojovaného DEVS pak budou reprezentovat propojení pinů komponent.
 
 Každá komponenta bude schopna následujícího chování:
 
 \begin{itemize}
-\item Změnit svůj vnitřní stav na základě změny simulačního času.
-\item Změnit svůj vnitřní stav na základě externí události přijaté na vstupní port (typicky na základě zprávy od jiné komponenty).
-\item Generovat zprávy na výstupní port.
+\item Změnit svůj vnitřní stav na základě změny simulačního času - $ta$ funkce z definice formalismu DEVS.
+\item Změnit svůj vnitřní stav na základě externí události přijaté na vstupní port (typicky na základě zprávy od jiné komponenty) - $\delta_{int}$ funkce z formalismu DEVS.
+\item Generovat zprávy na výstupní port - $\lambda$ funkce z formalismu DEVS.
 \end{itemize}
 
-Mikrokontroler bude speciálním rozšířením běžné komponenty poskytujícím navíc přístup ke své paměti, regitrům a kódu programu. To umožní řídit simulaci na základě instrukcí, obsahu paměti a registrů daného mikrokontroléru.  V rámci celé simulace je jen jedna instance mikrokontroleru.
+Mikrokontroler bude speciálním rozšířením běžné komponenty poskytujícím navíc přístup ke své paměti, regitrům a kódu programu. To umožní řídit simulaci na základě instrukcí a obsahu paměti a registrů daného mikrokontroléru. V rámci celé simulace bude jen jedna instance mikrokontroleru.
 
 Simulační jádro bude umět komponenty dynamicky načítat aniž by docházelo k jeho jakékoliv úpravě. Návrh je tak velmi obecný a umožní snadné přidávání dalších rozšiřujících komponent nebo i simulaci jiného mikrokontroleru.
 
@@ -370,7 +374,7 @@ Simulační jádro bude umět komponenty dynamicky načítat aniž by docházelo
 \section{Návrh knihovny simulující MCU MSP430}
 
 Knihovna simulující mikrokontroler MSP430 je klíčovou částí projektu. Bude umožňovat nahrání uživatelského programu a jeho
-následnou simulaci pomocí vykonávání instrukcí a běhu svých dalších interních komponent. Tato simulace bude řízena simulačním jádrem. Knihovna také poskytne grafickému uživatelskému rozhraní přístup ke své paměti a registrům, čímž umožní krokování programů. Bude také nabízet přístup k dalším ladícím informacím jako je například umístění lokálních a globálních proměnných v paměti nebo v registrech s využitím DWARF ladících informací. \cite{cvs}
+následnou simulaci pomocí vykonávání instrukcí a běhu svých dalších interních komponent. Tato simulace bude řízena simulačním jádrem. Knihovna také poskytne grafickému uživatelskému rozhraní přístup ke své paměti a registrům, čímž umožní krokování programů. Bude také nabízet přístup k dalším ladícím informacím jako je například umístění lokálních a globálních proměnných v paměti nebo v registrech s využitím DWARF ladících informací.
 
 Na obrázku \ref{fig:msp430_arch} lze vidět základní schéma MSP430 knihovny a její dekompozici. V této podkapitole jsou jednotlivé části tohoto schématu podrobněji rozebrány s důrazem na jejich funkci a postavení v rámci celé MSP430 knihovny.
 
@@ -399,7 +403,7 @@ Jednotlivé varianty mikrokontroleru MSP430 budou z hlediska pinů a jejich při
 
 \begin{itemize}
 \item Umístění pinu na pouzdru mikrokontroleru (vlevo, vpravo, ...) včetně jeho pořadí na dané straně pouzdra.
-\item Seznam názvů vstupů/výstupu realizovaných pomocí pinu a hodnoty bitů v řídících registrech určujících, který vstup/výstup bude kdy zvolen.
+\item Seznam názvů vstupů/výstupů realizovaných pomocí pinu a hodnoty bitů v řídících registrech určujících, který vstup/výstup bude kdy zvolen.
 \end{itemize}
 
 Interní komponenty (například časovač nebo modul USI) budou mít zaregistrovány v přepínači pinů názvy svých vstupů a výstupů.
@@ -548,3 +552,11 @@ V grafickém uživatelském rozhraní budou rovněž zobrazeny hodnoty registrů
 Uživateli bude umožněno vybrání pinů na kreslící ploše a jejich zařazení do seznamu sledovaných pinů. V pruběhu simulace se změny napětí na sledovaných pinech budou ukládat a zobrazovat uživateli v graficky pomocí rozhraní podobného osciloskopu. Uživatel tak uvidí vztahy mezi jednotlivými signály generovanými na pinech v závislosti na čase. Standardně bude rozhraní ukazovat průběh celé simulace. Bude však možné určitý časový úsek přiblížit a získat tak detailnější pohled. Uživatelské rozhraní rovněž umožní export těchto dat.
 
 \chapter{Závěr}
+
+Cílem této práce bylo seznámení s mikrokontrolery MSP430 a návrh simulátoru těchto mikrokontrolerů s podporou rozšiřitelných periferií. Díky využití formalismu Spojovaného DEVS jako základu pro simulátor je rozšiřování o externí periferie jednoduché, protože tento formalismus poskytuje jednotné rozhraní pro všechny komponenty simulace. Simulátor je navíc navržen tak, že je v budoucnu možné simulovat i jiné mikrokontrolery než MSP430. Díky oddělení simulačního jádra od grafického uživatelského rozhraní je rovněž možné zakomponovat simulaci i do jiných projektů, vytvořit nové uživatelské rozhraní nebo případně provádět simulace automaticky bez jakéhokoliv grafického rozhraní. Toho lze v praxi využít například pro tvorbu automatických testů při návrhu softwaru pro vestavěný systém.
+
+V dalším vývoji bude simulátor implementován a bude otestována jeho přesnost vůči reálnému mikrokontroleru MSP430. Budou také implementovány základní periferie jako je například LED dioda nebo tlačítko a postup tvorby těchto periferií bude popsán v diplomové práci jako případová studie.
+
+
+
+
