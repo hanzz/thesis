@@ -37,6 +37,7 @@
 \usepackage{amssymb}
 \usepackage[czech,english]{babel}
 \usepackage[utf8]{inputenc} %kodovani
+\usepackage{listings}
 \ifczech
   \main@language{czech}
 \else

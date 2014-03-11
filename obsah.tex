@@ -480,7 +480,7 @@ Z příkladu časovače lze vidět, že návrh a dekompozice mikrokontroleru MSP
 
 \section{Návrh grafického uživatelského rozhraní}
 
-Hlavní funkcí grafického uživatelského rozhraní bude řízení simulace, jednoduchá editace jednotlivých simulovaných komponent a lazení programu mikrokontroleru.
+Hlavní funkcí grafického uživatelského rozhraní bude řízení simulace, jednoduchá editace jednotlivých simulovaných komponent a ladění programu mikrokontroleru.
 
 Grafické uživatelské rozhraní by tedy mělo mít následující funkce:
 
@@ -488,8 +488,8 @@ Grafické uživatelské rozhraní by tedy mělo mít následující funkce:
 \item \textbf{Správa projektu} - Vytvoření, uložení a nahrání projektu.
 \item \textbf{Editace projektu} - Přidávání a odebírání simulovaných komponent a editace jejich propojení.
 \item \textbf{Řízení simulace} - Nastavení parametrů simulace, kontrola jejího běhu, krokování atd.
-\item \textbf{Lazení programu} - Zobrazení zdrojového kódu programu, hodnoty proměnných, registrů, paměti.
-\item \textbf{Lazení signálů} - Možnost kontrolovat v čase signály přenášené mezi simulovanými komponentami.
+\item \textbf{Ladění programu} - Zobrazení zdrojového kódu programu, hodnoty proměnných, registrů, paměti.
+\item \textbf{Ladění signálů} - Možnost kontrolovat v čase signály přenášené mezi simulovanými komponentami.
 \end{itemize}
 
 V této kapitole jsou tyto požadavky kladené na grafické uživatelské rozhraní detailně rozebrány a je navrženo grafické uživatelské rozhraní, které tyto
@@ -541,15 +541,360 @@ K dispozici bude také funkce pro krokování programu s následujícími 3 mód
 
 Další možností pozastavení simulace jsou takzvané breakpointy. Uživatel musí umět nastavit pozastavení simulace v případě, kdy určitý registr nabyl jím definovanou hodnotu (případně když hodnota v paměti definovaná adresou nabyla konkrétní hodnotu).
 
-\subsection{Lazení programu}
+\subsection{Ladění programu}
 
 Při každém pozastavení simulace uvidí uživatel aktuální instrukci ve zdrojovém kóu. Kromě samotného zdrojového kódu mu budou zobrazeny, pokud byl nahrán program ve formátu ELF s ladícími symboly, názvy všech zdrojových souborů nahraného programu a všech funkcí v daných souborech. Uživatel bude moci vybrat daný soubor a funkci v něm pro rychlejší orientaci v projektu. V případě dostupnosti zdrojového kódu v jazyce C se uživateli zobrazí jeho kód. Vždy však bude možné zobrazit diassemblovaný kód v assembleru. Uživatel bude moci přidávat breakpointy v libovolných místech kódu a po opětovném spuštění simulace se tato zastaví na místě, které uživatel zvolil.
 
 V grafickém uživatelském rozhraní budou rovněž zobrazeny hodnoty registrů a důležitých adres v paměti (standardně hexadecimálně, avšak bude možné zobrazit jejich hodnoty i v jiných soustavách). Uživatel bude moci použít tento seznam registrů a míst v paměti pro rychlé přidání nových breakpointů. Na základě místa ve zdrojovém kódu, na kterém došlo k pozastavení simulace, budou zobrazeny jména a hodnoty lokálních proměnných.
 
-\subsection{Lazení signálů}
+\subsection{Ladění signálů}
 
 Uživateli bude umožněno vybrání pinů na kreslící ploše a jejich zařazení do seznamu sledovaných pinů. V pruběhu simulace se změny napětí na sledovaných pinech budou ukládat a zobrazovat uživateli v graficky pomocí rozhraní podobného osciloskopu. Uživatel tak uvidí vztahy mezi jednotlivými signály generovanými na pinech v závislosti na čase. Standardně bude rozhraní ukazovat průběh celé simulace. Bude však možné určitý časový úsek přiblížit a získat tak detailnější pohled. Uživatelské rozhraní rovněž umožní export těchto dat.
+
+\chapter{Implementace}
+
+Cílem této kapitoly je popsat výsledný implementovaný simulátor založený na předešlém návrhu. Jako výchozí jazyk byl zvolen jazyk C++. Jedná se o jazyk podporující objektově orientované programování (OOP), čímž zjednodušuje dekompozici celého projektu na menší celky. Nástroj QDevKit, který může v budoucnu implementovaný simulátor rozšířit, je rovněž programován v jazyce C++, takže bude jejich budoucí spravování jednodušší.
+
+Pro tvorbu grafického uživatelského rozhraní byla použita knihovna Qt. Jedná se o multiplatformní knihovnu použitou i v projektu QDevKit licencovanou pod licencí LGPL.
+
+V následujících kapitolách jsou popsány implementační detaily jednotlivých částí simulátoru. Vzhledem k rozsáhlosti celého projektu se tato kapitola soustředí pouze na nejzajímavější aspekty implementace a nepopisuje implementaci do úplných detailů.
+
+\section{Implementace simulačního jádra}
+
+Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci formalismem DEVS a je šířena pod licencí GPLv2+. Díky této licenci může být použita i v případě bližší integrace simulátoru do prostředí QDevKit.
+
+\subsection{Knihovna ADEVS a její využití}
+
+Hlavní třídou knihovny ADEVS je třída adevs::Simulator. Tato třída určuje typ událostí, které se mezi jednotlivými simulovanými komponentami přeposílají a umožňuje řídit simulaci (lze například získat čas následující události a vykonat ji). Mezi komponentami se posílají události typu double (desetinné číslo),  které určují velikost napětí. Existuje zde však také speciální hodnota, která určuje stav vysoké impedance - DBL\_MAX.
+
+Atomické modely formalismu DEVS jsou reprezentovány třídou adevs::Atomic. Tato třída obsahuje následující metody známé z formalismu DEVS:
+
+\begin{itemize}
+\item \textbf{delta\_int(...)} - metoda volána v případě změny interního stavu modelu.
+\item \textbf{delta\_ext(...)} - metoda volána v případě externí události generované jiným modelem.
+\item \textbf{output\_func(...)} - metoda volána v případě, kdy má model vygenerovat své výstupní události.
+\item \textbf{ta(...)} - metoda určující čas setrvání v aktuálním stavu.
+\end{itemize}
+
+Každá simulovaná komponenta tak musí být dceřinou třídou třídy adevs::Atomic. Při spuštění (nebo restartování simulace) se musí veškeré komponenty a jejich propojení vytvořit znovu, protože mohly být v grafickém uživatelském rozhraní přidány nové komponenty a změněny jejich dosavadní propojení. To představuje problém, protože komponenta není tvořena pouze simulační částí (tzv. třídou adevs::Atomic), ale i mnoha dalšími třídami, jejichž chování dědí (je například nutné komponenty vykreslovat v grafickém uživatelské rozhraní - dědit tomu odpovídající třídu). Není však optimální vytvářet objekty v grafickém uživatelském rozhraní znovu při každém restartování simulace.
+
+Tento problém byl vyřešen oddělením simulační části komponenty do samostatné třídy SimulationObjectWrapper dědící ze třídy adevs::Atomic a využívající návrhový vzor Proxy. Tato třída mapuje volání metod třídy adevs::Atomic na volání třídy SimulationObject, ze které pak všechny simulované komponenty dědí
+své chování. Tento vztah znázorňuje obrázek \ref{fig:adevs_classes} Při restartování simulace tak nemusí být smazána a znovu vytvořena celá komponenta (třída SimulationObject), ale pouze třída SimulationObjectWrapper.
+
+Třída adevs::Simulator potřebuje ke svému běhu také instanci třídy adevs::Network. Tato třída reprezentuje formalismus Spojovaného DEVS a definuje sadu čistě virtuálních metod, které pak dceřiné třídy implementují (například pomocí metody route(...) se směrují události mezi komponentami). Knihovna ADEVS obsahuje několik implementací této třídy. Bohužel jsou však tyto implementace velmi obecné a tím pádem i pomalé. Bylo tak nutné vytvořit novou třídu SimulationModel, která pracuje přímo s objekty typu SimulationObjectWrapper.
+
+\subsection{Rozšiřitelné periferie formou modulů}
+
+Jak již bylo zmíněno v předchozí podkapitole, každá simulovaná komponenta je dceřinou třídou třídy SimulationObject. Rozšiřitelné moduly umožňují načtení implementace této třídy ze sdílené knihovny nebo z kódu modulu v jazyce Python. Protože je každou komponentu potřeba vykreslit v grafickém uživatelském rozhraní a umožnit interakci uživatele, musí rozšiřitelný modul implementovat rovněž třídu ScreenObject (tato je popsána dále v kapitole TODO). Pro jednoduchost byly tyto dvě třídy zapouzdřeny v třídě Peripheral, která je výslednou třídou pro implementaci rozšiřitelných modulů. Vztahy mezi popsanými třídami je možné vidět na obrázku \ref{fig:adevs_classes}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/adevs_class}
+\caption{Diagram znázorňující vztahy mezi třídami knihovny ADEVS, simulovanými periferiemi a mikrokontrolery.}
+\label{fig:adevs_classes}
+\end{figure}
+
+Každý modul obsahuje XML soubor obsahující jeho metadata. Jedná se zejména o jméno modulu, jméno autora, typ modulu (Pyhon nebo dynamická knihovna), název knihovny a licence. Tento XML soubor je načten třídou PeripheralManager a na základě metadat je pak dále nahrán jeho kód. Nahrání kódu modulu se liší v závislosti na typu modulu a je popsáno v následujících dvou podkapitolách.
+
+Na základě metadat a nahraného kódu modulu je vytvořena instance třídy PeripheralInfo, kterou pak využívají další části simulátoru. Tato třída obsahuje metodu pro vytvoření nové instance periferie a poskytuje o periferii základní informace (například jméno). Seznam všech nahraných modulů lze pak získat pomocí již zmíněné třídy PeripheralManager.
+
+\subsubsection{Moduly v jazyce C++}
+
+Moduly naprogramované v jazyce C++ jsou načítány jako sdílené knihovny pomocí třídy QPluginLoader poskytované knihovnou Qt. Při programování C++ modulů je potřeba kromě třídy Peripheral implementovat rovněž třídu PeripheralInterface (s jedinou metodou create(...)), která slouží pro vytváření nových instancí periferií a kterou QPluginLoader používá k identifikaci modulu.
+
+Ukázku kódu v jazyce C++ implementující jednoduché periferie lze najít v kapitole TODO.
+
+\subsubsection{Moduly v jazyce Python}
+
+Pro vytváření modulů v jazyce Python je využita knihovna PythonQt. Tato knihovna poskytuje rozhraní mezi Qt knihovnou a jazykem Python. Je rovněž použita v projektu QDevKit a tak při případné distribuci obou aplikací současně není přidávána žádná nová závislost.
+
+Základ pro tvorbu modulů v jazyce Python byl převzat z projektu QDevKit (jedná se o třídy Script a ScriptEngine), avšak byly provedeny výkonostní optimalizace.
+
+Pomocí třídy ScriptEngine jsou načteny moduly v jazyce Python třídou PeripheralManager a jsou dále reprezentovány jako instance třídy Script. Nad třídou Script jsou implementovány třídy PythonPeripheralInterface (rozšiřující třídu PeripheralInterface) a PythonPeripheral (rozšiřující třídu Peripheral).
+
+Třída PythonPeripheralInterface vytváří novou instanci třídy PythonPeripheral, čím vznikne nová periferie. Třída PythonPeripheral dědí rozhraní třídy Peripheral a mapuje všechna její volání pomocí knihovny PythonQt do jazyka Python.
+
+Ukázka kódu v jazyce Python implementující jednoduché periferie je rovněž popsána dále v kapitole TODO.
+
+\subsection{Rozšiřitelné MCU formou modulů}
+
+Jádro simulátoru rovněž umožňuje implementaci jiných 16 bitových mikrokontrolerů. Tyto mikrokontrolery mohou být načítány pouze jako sdílené knihovny naprogramované v jazyce C++. Mikrokontroler je reprezentován třídou MCU (rozšiřuje třídu Peripheral), která musí být děděna každým mikrokontrolerem.
+
+Třída MCU rozšiřuje třídu Peripheral zejména o možnost přístupu k paměti a registrům mikrokontroleru a přistupu k ladícím informacím pro aktuální program (viz podkapitola TODO).
+
+Paměť MCU je reprezentována třídou Memory, obsahující základní metody pro změnu paměťových buněk (setByte(...), getByte(...) atd.). Umožňuje také nastavit paměťové buňce instanci třídy MemoryWatcher, jejíž metoda handleMemoryChanged(...) (případně handleMemoryRead(...)) je volána pokud došlo ke změně hodnoty na této adrese.
+
+Registry mikrokontroleru jsou zapouzdřeny ve třídě RegisterSet. Každý register je tvořen třídou Register, která rovněž poskytuje metody k jeho změně a nabízí možnost jeho sledování pomocí instance třídy RegisterWatcher.
+
+Načítání modulů mikrokontrolerů funguje obdobně jako u periferií. Existují zde analogické třídy MCUInterface, MCUManager a MCUInfo.
+
+\subsection{Podpora breakpointů}
+
+Breakpointy umožňují zastavení simulace v případě splnění určíté, předem dané, podmínky. Byly implementovány dva typy breakpointů - zastavení simulace v případě změny hodnoty registru a zastavení simulace v případě změny hodnoty pamětí na určité adrese.
+
+V obou případech slouží pro registraci breakpointů třída BreakpointManager. Tato třída využívá tříd RegisterWatcher a MemoryWatcher ke sledování registrů a paměti a v případě splnění podmínky breakpointu zastaví simulaci.
+
+V případě zastavení simulace na základě hodnoty registru je jedním z nejčastějších případě zastavení na základě hodnoty registru PC. Tohoto se využívá pro krokování programu nebo jeho zastavení na určité instrukci. Je nutné umožnit nastavení více hodnot jednoho registru jako podmínky pro zastavení simulace. 
+
+Jelikož ke změně hodnoty registrů dochází velmi často, je potřeba zjistit velmi rychle, zda-li je aktuální hodnota registru důvodem k zastavení simulace. Pro každý registr je uložen seznam všech breakpointů (hodnot registrů). Tento seznam je při vložení nové hodnoty seřazen algoritmem quick sort a pro vyhledání hodnoty v seznamu je využito binární vyhledávání.
+
+V případě zastavení simulace na základě hodnoty v paměti je navíc umožněno zastavit simulaci v případě jakékoliv změny paměti a implementace počítá s možným budoucím rozšířením o složitější podmínky (například příslušnost hodnoty v daném rozsahu nebo změna konkrétního bitu na dané adrese).
+
+\section{Implementace zpracování DWARF informací}
+
+Aby bylo možné při ladění programu získat hodnoty a typ lokálních proměnných, je potřeba načítat a zpracovávat DWARF ladící informace. Pro samotné uchování jednotlivých struktur formátu DWARF byly vytvořeny následující abstraktní třídy (jejich vztahy lze vidět na obrázku \ref{fig:dwarf_classes}):
+
+\begin{itemize}
+\item \textbf{VariableType} - Třída reprezentující typ proměnné uložené v DWARF informacích. Obsahuje informace jako je například název typu ("int", "char *", ...), velikost typu v bytech, způsob zakódování v paměti nebo například podtyp (v případě že jde o pole prvků jiného typu).
+\item \textbf{VariableValuePiece} - Třída obsahující informaci o umístění části hodnoty proměnné v paměti nebo registrech mikrokontroleru. Hodnoty proměnných mohou být rozděleny na části například v případě, kdy část hodnoty proměnné je umístěna v registrech a část v paměti.
+\item \textbf{VariableValue} - Pole instancí tříd VariableValuePiece, které reprezentuje kompletní hodnotu dané proměnné.
+\item \textbf{Variable} - Třída zapouzdřující třídy VariableType a VariableValue definující jednu proměnnou daného programu.
+\item \textbf{Subprogram} - Třída definující podprogram. Obsahuje seznam lokálních proměnných a argumentů podprogramu (instancí tříd Variable), jeho jméno a rozsah paměti, na které se kód podprogramu nachází
+\item \textbf{DebugData} - Hlavní třída reprezentující kompletní DWARF ladící informace daného programu. Obsahuje seznam všech podprogramů (instancí tříd Subprogram).
+\end{itemize}
+
+Tyto třídy jsou obecnými třídami pro uchování ladících informací a nejsou nikterak přímo závislé na využítí formátu DWARF. V rámci této diplomové práce je však zpracováván pouze formát DWARF. Pro uložení dalších potřebných informací specifických pro formát DWARF bylo potřeba definovat ještě následující 3 třídy:
+
+\begin{itemize}
+\item \textbf{DwarfExpression} - Třída obsahující kód mikroinstrukcí pro zásobníkový automat definovaný formátem DWARF pro získání hodnoty proměnné (nebo její adresy) v závislosti na aktuálně zpracovávané instrukci. Tato třída zmíněný zásobníkový automat rovněž implementuje.
+\item \textbf{DwarfLocation} - Třída zapouzdřující třídu DwarfExpression a definující rozsah adres, pro který je kód uložený v DwarfExpression platný.
+\item \textbf{DwarfLocationList} - Seznam instancí tříd DwarfLocation.
+\end{itemize}
+
+Načtení DWARF ladících informací probíha za pomocí třídy DWARFLoader. Tato třída využívá nástroje objdump dodávaného s překladačem GCC. Nástroj objdump je postupně spuštěn s přepínači "--dwarf=info" a "--dwarf=loc", jejichž výstup je touto třídou rozparsován a zpracován a jsou vytvořeny instance výše zmíněných tříd.
+
+\subsection{Využití DWARF informací}
+
+Jedním z příkladu využití DWARF ladících informací je zobrazení lokálních proměnných aktuálně prováděného podprogramu. Při zastavení simulace na určité instrukci je za pomocí její adresy (hodnoty registru PC) nalezen aktuálně prováděný podprogram prostřednictvím třídy DebugData. Z podprogramu (instance třídy Subprogram) je získán seznam lokálních proměnných a pro každou proměnnou (instanci třídy Variable) je zavolána funkce pro získání její hodnoty.
+
+Pokud není hodnota proměnné závislá na hodnotě registru PC, obsahuje instance třídy Variable přímo instanci třídy DwarfExpression. V opačném případě je v seznamu lokací DwarfLocationList nalezena odpovídající instance třídy DwarfExpression (na základě hodnoty registru PC). Dále je vyhodnocen kód zásobníkového automatu uloženého ve zmíněné třídě DwarfExpression a na základě výsledku je určena hodnota proměnné.
+
+Hodnotu proměnné je potřeba reprezentovat odpovídajícím způsobem v závislosti na jejím typu. K tomu slouží třída VariableFormatter, která na základě typu proměnné formátuje její hodnotu a vrátí ji jako řetětec znaků.
+
+\section{Implementace knihovny simulující MCU MSP430}
+
+Knihovna simulující MCU MSP430 vykonává instrukce simulovaného programu a poskytuje všechny interní moduly poskytované mikrokontrolerem.
+
+Hlavní třídou knihovny je třída MCU\_MSP430, která reprezentuje celý mikrokontroler. V této třídě jsou vytvářeny a navzájem propojeny jednotlivé dílčí podtřídy, kterými se dále tato kapitola zabývá. Třída MCU\_MSP430 dědí ze třídy MCU a lze ji tak přímo použít jako rozšiřující modul simulátoru.
+
+Nejjednoduššími třídami simulátoru jsou třídy Memory, RegisterSet a Register. Třída Memory implementuje paměť jako pole bytů a umožňuje její čtení a zápis včetně informování o změně jednotlivých bytů pomocí instance třídy MemoryWatcher. Obdobně jsou implementovány třídy RegisterSet a Register.
+
+\subsection{Implementace jednotlivých variant MCU MSP430}
+
+Implementace knihovny umožňuje simulování většiny podporovaných variant mikrokontroleru MSP430. Každá varianta mikrokontroleru MSP430 je reprezentována vlastní třídou dědící ze třídy Variant. Tyto třídy jsou vytvořeny při načtení knihovny a lze k nim přistupovat na základě řetězce udávajícího název varianty funkcí getVariant(...).
+
+Třída Variant obsahuje metody pro získání informací, které jsou pro dané varianty specifické. Jedná se například o adresy jednotlivých portů (metoda getP1DIR()), indexy vektorů přerušení (například metoda getUSART1TX\_VECTOR()) nebo například získání počáteční adresy vektoru přerušení (metoda getINTVECT()).
+
+Vytváření těchto tříd ručně podle dokumentace by bylo značně obtížné a byl proto zvolen lepší přístup. Kompilátor msp430gcc obsahuje pro každou variantu mikrokontroleru hlavičkový soubor definující jednotlivé údaje specifické pro daný mikrokontroler a jeho vlastnosti. Byl vytvořen skript v jazyce Python, kterým lze za použití nástroje msp430-gcc s přepínači -E a -dM získat z tohoto hlavičkového souboru seznam všech těchto definic pro daný mikrokontroler.
+
+Tento seznam je pak dále zpracován a jsou z něj vybrány pouze ty definice, které jsou v knihovně simulující MCU MSP430 potřeba. Následně je vygenerována samotná třída Variant a i všechny její implementace - pro každý mikrokontroler jedna.
+
+Tímto postupem byla jednoduše vyřešena většina rozdílů mezi variantami mikrokotrolerů včetně detekce různých interních modulů poskytovaných různými variantami.
+
+\subsection{Načítání programu}
+
+Pomocí knihovny lze načítat programy pro miktrokontroler ve formátu ELF a Intel HEX (A43). Načítání souborů ve formátu A43 provádí metoda loadA43(...) třídy Memory. Tato metoda rozparsuje data ve formátu A43, uloží je na dané místo v paměti a nastaví registr PC na adresu první instrukce.
+
+Načítání souborů ve formátu ELF probíhá s využitím pomocné třídy CodeUtil. Ta za pomocí nástroje msp430-objcopy převede program z formátu ELF do formátu A43, který je pak možné načíst pomocí třídy Memory.
+
+Při načítání programu je program rovněž disassemblován. To je provedeno pomocí nástroje msp430-objdump, jehož výstup je rozparsován a dále zpracováván grafickým uživatelským rozhraním.
+
+\subsection{Dekódování a vykonávání instrukcí}
+
+Instrukce je reprezentována instancí třídy Instruction. Tato třída uchovává informace o zdrojovém a cílovem argumentu instrukce, o jejím typu, offsetu a případném bytovém módu. Každý argument je uložen jako implementace abstraktní třídy InstructionArgument definující základní rozhraní pro každý argumentu. Byly implementovány následující typy argumentů:
+
+\begin{itemize}
+\item \textbf{ConstantArgument} - Argumentem je konstanta.
+\item \textbf{MemoryArgument} - Argumentem je místo v paměti dané adresou.
+\item \textbf{IndexedArgument} - Argumentem je místo v paměti dané adresou a offsetem.
+\item \textbf{IndirectAutoincrementArgument} - Argumentem je místo v paměti dané adresou uloženou v registru, která je po vykonání instrukce inkrementována.
+\item \textbf{Register} - Registr může být také argumentem instrukce a tak již dříve zmíněná třída Register rovněž implementuje třídu InstructionArgument.
+\end{itemize}
+
+Instrukce jsou dekódovány pomocí třídy InstructionDecoder. Tato třída načte aktuální instrukci z paměti, rozparsuje ji, uloží do instance třídy Instruction a vrací počet hodinových cyklů potřebných k těmto úkonům. Ke každé instrukci je definována funkce, která simuluje její vykonání. Tato funkce jako své parametry přijímá ukazatel na paměť (třídu Memory), registry (třídu RegisterSet) a aktuální instrukci (třídu Instruction). Návratovou hodnotou této funkce je rovněž počet hodinových cyklů potřebných k jejímu provedení.
+
+Ukazatele na tyto funkce (indexované podle operačního kódu a typu) jsou uloženy ve tříde InstructionManager. Tato třída obsahuje metodu executeInstruction(...), která na základě typy a operačního kódu aktuální instrukce tuto instrukci vykoná (spustí příslošnou funkci včetně inkrementace PC registru).
+
+Z pohledu simulace probíhá dekódování a vykonávání instrukcí ve třídě MCU\_MSP430, konkrétně v její metodě tickRising(...). Tato metoda je zprostředkovaně (za pomocí hodinového modulu) volána simulačním jádrem s každým cyklem MCLK hodin. S ohledem na počet hodinových cyklů potřebných k dekódování a vykonání instrukcí jsou pak instrukce postupně zpracovávány.
+
+
+\subsection{Hodinový modul}
+
+Hodinový modul umožňuje časování instrukcí a dalších interních periferií. Třídy hodinového modulu jsou v závislosti na své funkci (a jejich otcovské třídě) rozděleny do následujících skupin:
+
+\begin{itemize}
+\item \textbf{Oscilátory} - Skupina tříd dědících třídu Oscillator. Tyto třídy poskytují zdroj hodinového signálu další skupině tříd a jako jediné komunikují přímo s knihovnou ADEVS. Jedná se například o oscilátory LFXT1, VLO, XT2 nebo DCO.
+\item \textbf{Hodiny} - Skupina tříd dědících třidu Clock. Tyto třídy využívají Oscilátory jako zdroj svého signálu (a většinou umožňují měnit v závislosti na svých registrech mezi více oscilátory). Jedná se například o hodiny MCLK, SMCLK nebo ACLK.
+\item \textbf{Časovač} - Třída reprezentující jeden časovač (například TimerA)  mikrokontroleru MSP430.
+\end{itemize}
+
+\subsection{Implementace pinů}
+
+\subsection{Komunikační moduly}
+
+\subsection{Automatické testování}
+
+Knihovna simulující MCU MSP430 je jako jediná z celého simulátoru pokryta sadou automatických testů. Jedná se celkem o sadu 56 testů testujících jednotlivé části knihovny.
+
+Pro implementaci testů je použita knihovna CPPUnit. Každá testovaná třída z knihovny má svoji odpovídající CPPUnit třída, která ji testuje. Testování probíhá jak na základě znalostí vnitřní architektury knihovny (white box), tak pouze na základě vstupního programu a sledování reakcí knihovny na tento program (black box).
+
+První třída testů většinou testuje konkrétni metody daných tříd knihovny. Jako příklad lze uvést testy dekódování instrukcí, testy pamětí a registrů nebo například test směrování signálů mezi piny.
+
+Druhá třída testů pak funguje tak, že je do paměti nahrán konkrétní program pro daný mikrokontroler a v rámci testu je instrukci po instrukci vykonáván. Vždy se testuje, zda hodnoty registrů odpovídají očekávání a zda instrukce vykonala danou operaci. Z této třídy testů lze zmínit test BlinkingLed testující program blikající LED diody, nebo test Capture testující zachytávání signálu časovačem.
+
+\section{Implementace grafického uživatelského rozhraní}
+
+Grafické uživatelské rozhraní (GUI) je naprogramováno v jazyce C++ za použití knihovny Qt a umožňuje řízení celé simulace. V této podkapitole je popsána implementace dílčích částí GUI a jejich návaznost na další části simulátoru popsané v předešlých podkapitolách.
+
+\subsection{Hlavní okno}
+
+Základní třídou celé aplikace je třída QSimKit reprezentující její hlavní okno. Tato třída vytváří a zapouzdřuje všechny další části GUI popsané dále v této části diplomové práce.
+
+Hlavní okno aplikace lze vidět na obrázku TODO. Na horní části okna jsou ovládácí prvky určené k řízení simulace a nastavení velikosti kroku při jejím krokování. Ve středu okna se nachází kreslicích plocha popsaná v podkapitole TODO. V levé části okna je TODO
+
+\subsection{Správa projektu}
+
+TODO: Ukladani, vytvoreni noveho projektu
+
+\subsection{Kreslící plocha}
+
+Kreslící plocha zobrazuje MCU a jednotlivé periferie včetně jejich propojení. Umožňuje přidání nových periferí, odebrání stávajících a jejich propojování.
+
+Každá periferie zobrazená na kreslící ploše je dceřinou třídou třídy ScreenObject. Tato třída obsahuje základní informace o každém objektu, jako jsou jeho umístění, velikost, jména a umístění jeho pinů nebo například seznam akcí zobrazených v kontextovém menu objektu. Obsahuje také funkci paint(...), která slouží k vykreslení objektu na daných souřadnicích.
+
+Samotné vykreslení kreslící plochy a správa jejich objektů probíha ve třídě Screen rozšiřující třídy QWidget. Ta obsahuje seznam všech instancí třídy ScreenObject, provádí jejich vykreslení a umožňuje jejich posouvání, přidávání a odstraňování. Při spuštění simulace je zavolána její metoda prepareSimulation(...), která ke každému objektu typu ScreenObject vytvoří odpovídající objekt typu SimulationObjectWrapper a přidá jej do aktuální simulace. V průběhu simulace je kreslící plocha periodicky vykreslována.
+
+\subsubsection{Propojování pinů}
+
+Propojování pinů jednotlivých periferií probíhá ve třídě ConnectionManager. Této třídě jsou třídou Screen předány Qt události potřebné k vytváření nových propojení. Třída Screen rovněž volá metodu paint(...) třídy ConnectionManager pro vykreslení propojení pinů. Jednotlivá propojení jsou uložena v seznamu struktur typu Connection. Každá položka seznamu obsahuje ukazatel na objekt a pin ze kterého propojení vychází a objekt a pin do kterého spojení vstupuje. Jsou zde také uloženy souřadnice klíčových bodů na kreslící ploše, kterými propojení prochází.
+
+Třída ConnectionManager obsahuje, podobně jako třída Screen, metodu prepareSimulation(...). Tato metoda propojí jednotlivé piny objektů typu SimulationObjectWrapper při spuštění simulace a zařídí tak správné směrování simulačních událostí.
+
+Lze také vytvořit propojení více než dvou objektů. V tomto případě je na kreslící plochu přidán nový objekt typu ConnectionNode. Tento objekt má 4 piny (na každé ze svých stran jeden) a při simulování přenáší veškeré přijaté signály z libovolného pinu na všechny své piny.
+
+\subsubsection{Přidání nové periferie na kreslící plochu}
+
+Pro přidání nové periferi na kreslící plochu slouží dialogové okno AddPeripheral. To prostřednictvím instance třídy PeripheralManager získá seznam všech dostupných periferií a umožní uživateli jejich výběr. Tento dialog také zobrazuje náhled periferi za pomocí třídy ScreenObjectPreview. Tato třída vytváří novou dočasnou instanci periferie a vykreslí ji.
+
+\subsection{Detaily periferií a mikrokontroleru}
+
+Detaily jednotlivých periferií a mikrokotroleru lze vidět v levé části hlavního okna. Základem je třída Peripherals obsahující seznam všech položek jednotlivých periferií uložených a zobrazených pomocí Qt třídy QTreeWidget. Při přidání nebo odebrání nové periferie je zavolána její metoda getPeripheraLItem(...), která vrátí položku periferie (instanci třídy PeripheralItem) reprezentující tuto periferii v seznamu periferií.
+
+Každá periferie tak může implementovat vlastní implementaci třídy PeripheralItem, která je pak v detailech periferií zobrazena. Kromě obecné třídy PeripheralItem existují i další dvě třídy: MemoryItem a VariableItem.
+
+Třída MemoryItem je využita pro položky zobrazující hodnotu místa v paměti mikrokontroleru. V případě přidání této položky do detailů periferií umožní třída Peripherals vytváření nových breakpointů na základě adresy periferie a automaticky zobrazuje za pomocí třídy VariableFormatter hodnotu adresové buňky ve správném formátu na základě jejího typu.
+
+Třída VariableItem pak slouží k zobrazení hodnoty lokálních proměnných za pomocí DWARF ladících informací.
+
+\subsection{Disassembler}
+
+Disassembler slouží k zobrazení zdrojového kódu programu aktuálně zpracovávaného mikrokontrolerem. Hlavní třídou je třída Disassembler. Při pridání nového mikrokontrolu nebo změně jeho programu je znovu nahrán disassemblovaný kód a případné ladící informace. Zdrojový kód je zobrazen v Qt objektu typu QTreeWidget. V horní části disassembleru může uživatel vybrat zdrojový soubor programu a název funkce, kterou chce v tomto zdrojovém souboru zobrazit. Zobrazení zdrojového kódu lze přepínat mezi assemblerem a zdrojovým kódem v jazyce C.
+
+Po přerušení simulace (nebo například krokování programu) je na základě hodnoty PC registru metodou pointToInstruction(...) zobrazena aktuální instrukce. Uživatel rovněž může pomocí kontextového menu přidávat nové breakpointy. Adresy instrukcí, na kterých je nastaven breakpoint jsou zobrazeny červenou barvou.
+
+Diassembler rovněž přidává instanci třídy DisassemblerItem implementující třídu PeripheralItem do detailů periferií. Uživatel tak při krokování nebo přerušení simulace vidí v detailech periferí hodnoty lokálních proměnných v aktuální funkci.
+
+\subsection{Sledování pinů}
+
+Sledování pinů (na obrázku simulátoru dole) je umožněno pomocí třídy TrackedPins. Tato třída je napojena na signály třídy Screen informující o změně sledovaných pinů (Sledování lze pro každý pin nastavit v jeho kontextovém menu na kreslící ploše). Pokud dojde ke změně sledovaných pinů, třídy TrackedPins přidá nebo odstraní tento pin z instance třídy Plot, kterou zapouzdřuje.
+
+Třída Plot se stará o samotné vykreslení grafů zobrazujících změnu napětí na jednotlivých sledovaných pinech. Pro každý pin je uchováno jeho jméno a ukazatel na instanci třídy PinHistory, která obsahuje vykreslovaná data. Instance třídy PinHistory jsou vytvořeny a spravovány ve třídě SimulationObjectWrapper.
+
+Pokud dojde k přeposlání simulační události třídou SimulationObjectWrapper a daný pin je sledován, je informace o této události vložena do odpovídající instance třídy PinHistory. Pokud je navíc výstup vygenerován zpracováním určité intrukce, je její adresa rovněž uložena a uživatel pak může pomocí kontextového menu zobrazit instrukci, která je zodpovědná za danou změnu v grafu.
+
+Třída Plot rovněž umožňuje měnit měřítko grafu, označovat jeho úseky a zobrazuje délku označeného úseku v sekundách.
+
+\chapter{Verifikace}
+
+
+\chapter{Případová studie}
+
+Cílem této kapitoly je popsat a názorně ukázat modulárnost implementovaného simulátoru prostřednictvím tvorby dvou nových periferií - tlačítka a oscilátoru. Pro názornost bude tlačítko naprogramováno v jazyce Python a oscilátor v jazyce C++. Tato kapitola rovněž prakticky popisuje rozhraní pro tvorbu nových modulů pro oba tyto jazyky.
+
+\section{Rozšíření simulátoru o tlačítko v jazyce Python}
+
+První část rozšíření simulátoru o novou periferii spočívá ve tvorbě XML souboru popisující nově vytvářenou periferii. Simulátor informace z tohoto XML souboru zobrazuje ve svém grafickém uživalském rozhraní a využívá jich rovněž k nalezení samotného skriptu v jazyce Python definujícího chování periferie.
+
+Tento XML soubor musí být pojmenován "peripheral.xml" a musí obsahovat všechny údaje z následujícího příkladu:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt}
+\begin{lstlisting}
+<peripheral type='python'>
+   <name>Button</name>
+   <comment>Button</comment>
+   <author>Jan Kaluza</author>
+   <email>hanzz.k@gmail.com</email>
+   <version>0.1</version>
+   <license>GNU/GPL</license>
+   <library>button</library>
+</peripheral>
+\end{lstlisting}
+
+Jednotlivé řádky definují metadata o dané rozšiřující periferii. Důležitý je zejména tag "library", jehož hodnota určuje název skriptu v jazyce Python (bez přípony ".py"), který se simulátor pokusí načíst.
+
+\subsection{Tvorba modulu v jazyce Python}
+
+V této podkapitole je postupně popsán celý modul implementující tlačítko. Každý rozšiřující modul musí obsahovat třídu Peripheral a importovat knihovny PythonQt:
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+from PythonQt.QtCore import *
+from PythonQt.QtGui import *
+
+class Peripheral():
+\end{lstlisting}
+
+Při vytvoření nové instance tlačítka v simulátoru je vytvořena nová instance třídy Peripheral a spuštěn její konstruktor:
+\begin{lstlisting}
+	def __init__(self):
+		# Povinné proměnné potřebné pro simulátor:
+		self.width = 36		# Šířka tlačítka v pixelech
+		self.height = 36	# Výška tlačítka v pixelech
+		self.pins = []		# Seznam pinů
+		self.pins.append(QRect(24, 12, 12, 12))	# Souřadnice pinu
+		self.options = []	# Seznam voleb v kontextovém menu
+		# + určuje zaškrtnutou zaškrtávací volbu
+		self.options.append("+High when pushed")
+
+		# Proměnné použité pouze tímto modulem:
+		self.state = False	# Stav tlačítka
+		self.highWhenPushed = True	# Tlačítko generuje 1 při stisknutí
+		self.out = []	# události připravené ke generování
+\end{lstlisting}
+
+\section{Rozšíření simulátoru o oscilátor v jazyce C++}
+
+
 
 \chapter{Závěr}
 
