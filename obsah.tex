@@ -206,6 +206,38 @@ Prvním módem je Capture mód. Časovač je v tomto módu připojen k externím
 
 Pokud je Capture/Compare blok v Compare módu a hodnota časovače je rovna hodnotě CCR registru, je vygenerováno přerušení a na externí pin lze podle nastavení generovat výstup. Compare mód je využíván pro generování PWM signálu nebo pro generování pravidelných přerušení.
 
+\subsection{Komunikační moduly}
+
+Mikrokontrolery MSP430 obsahují v závislosti na modelu různé komunikační moduly. Komunikační moduly umožňují hardwarovou komunikaci mikrokontroleru s jiným zařízením pomocí předem stanoveného protokolu a přenosové rychlosti. Tato podkapitola stručně shrnuje možné komunikační moduly a protokol SPI. Jednotlivé moduly podporují i jiné protokoly, ale v rámci této diplomové práce byla implementována pouze komunikace za použití protokolu SPI.
+
+\subsubsection{Protokol SPI}
+
+Protokol SPI (Serial Peripheral Interface) definuje komunikace mezi zařízeními propojenými třemi vodiči z nichž jedno ze zařízení je master a ostatní jsou slave. Jedná se o vodič SCLK přenášející hodinový signál určující frekvenci komunikace (generuje master), vodič SDO přenášející data ze zařízení a vodič SDI přenášející data do zařízení.
+
+Existuje i možnost komunikace pomocí 4 vodičů. Čtvrtým vodičem je v tomto případě vodič STE zajišťující vybrání konkrétního slave zařízení, které bude data spracovávat.
+
+Samotná komunikace pak probíhá tak, že se s každým tikem hodin přenese po vodičích SDO a SDI jeden bit, zařízení jej přečtou a uloží do paměti. Takto se přenese všech N bitů.
+
+\subsubsection{Komunikační modul USI}
+
+Komunikační modul USI (Universal Seria Interface) poskytuje synchronní sériovou komunikaci. Jeho základem je 8bitový nebo 16bitový posuvný registr, ze kterého jsou postupně vybírány výstupní bity a vstupní bity jsou do něj nahrávány. Modul USI podporuje přerušení, takže jeho běh nevyžaduje ze strany softwaru nadbytečné řízení.
+
+Lze zvolit mezi přenosem 8 bitu nebo 16 bitů a jejich orientací - MSB nebo LSB. Lze rovněž nastavit fázi a polaritu hodin generovaného signálu. Jako vstup hodinového signálu lze zvolit ACLK, SMCLK, SCLK (externí hodinový signál), výstupu z časovače nebo jej ovládat softwarově zápisem do registru.
+
+Tento komunikační modul je implementován ve starších modelech mikrokontroleru MSP430. V novějších jej nahradil modul USCI.
+
+\subsubsection{Komunikační modul USCI}
+
+Modul USCI (Universal Serial Communication Interface) podporuje více komunikačních protokolů (SPI, I2C, UART) v rámci jediného modulu. USCI modul je interně tvořen sadou podmodulů, které poskytují specifické komunikační protokoly.
+
+V případě protokolu SPI lze zvolit mezi přenosem sedmi nebo osmi bitů a lze určit jejich pořadí - MSB nebo LSB. Narozdíl od modulu USI podporuje modul USCI i komunikace pomocí 4 vodičů. Registry pro přijatá a odeslaná data jsou od sebe odděleny a ke každému z nich existuje buffer, čímž je umožněna nepřerušená komunikace.
+
+Lze taktéž zvolit polaritu a fázi generovaného hodinového signálu a jako jeho vstup využít ACLK neb SMCLK.
+
+\subsubsection{Komunikační modul USART}
+
+Komunikační modul USART (Universal Synchronous/Asynchronous Receive/Transmit) podporuje 2 komunikační protokoly - SPI a UART. Z hlediska funkčnosti se jeho vlastnosti pro protokol SPI neliší od modulu USCI, liší se pouze vnitřní architekturou a řízením ze strany software.
+
 
 \section{Formáty uložení spustitelného kódu}
 
@@ -317,7 +349,14 @@ Cílem této kapitoly je popsat strukturu navrženého simulátoru, jeho rozhran
 
 \section{Struktura navrženého simulátoru}
 
-Simulátor bude rozdělen do čtyř navzájem se dopňujících částí - simulační jádro, knihovna simulující MCU MSP430, komponenty rozšiřující simulační jádro a grafické uživatelské rozhraní.
+Simulátor bude rozdělen do čtyř navzájem se dopňujících částí - simulační jádro, knihovna simulující MCU MSP430, komponenty rozšiřující simulační jádro a grafické uživatelské rozhraní. Toto rozdělení lze vidět na obrázku \ref{fig:struktura}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/struktura}
+\caption{Struktura navrženého simulátoru.}
+\label{fig:struktura}
+\end{figure}
 
 Simulační jádro bude založeno na formalismu Spojovaného DEVS a bude umožňovat propojení všech simulovaných komponent. Komponenty budou atomickými modely formalismu DEVS a budou implementovat chování jednotlivých simulovaných periferií jako například tlačítka, LCD displeje nebo i samotného mikrokontroleru. Mikrokontroler bude vzhledem ke své komplexnosti implementován jako nezávislá knihovna. Grafické uživatelské rozhraní pak zpřístupní všechny funkce simulátoru uživateli.
 
@@ -561,7 +600,7 @@ V následujících kapitolách jsou popsány implementační detaily jednotlivý
 
 \section{Implementace simulačního jádra}
 
-Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci formalismem DEVS a je šířena pod licencí GPLv2+. Díky této licenci může být použita i v případě bližší integrace simulátoru do prostředí QDevKit.
+Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci za pomocí formalismu DEVS a je šířena pod licencí GPLv2+. Díky této licenci může být použita i v případě bližší integrace simulátoru do prostředí QDevKit.
 
 \subsection{Knihovna ADEVS a její využití}
 
@@ -571,21 +610,27 @@ Atomické modely formalismu DEVS jsou reprezentovány třídou adevs::Atomic. Ta
 
 \begin{itemize}
 \item \textbf{delta\_int(...)} - metoda volána v případě změny interního stavu modelu.
-\item \textbf{delta\_ext(...)} - metoda volána v případě externí události generované jiným modelem.
+\item \textbf{delta\_ext(...)} - metoda volána v případě externí události generované jiným modelem (jinou komponentou).
 \item \textbf{output\_func(...)} - metoda volána v případě, kdy má model vygenerovat své výstupní události.
 \item \textbf{ta(...)} - metoda určující čas setrvání v aktuálním stavu.
 \end{itemize}
 
-Každá simulovaná komponenta tak musí být dceřinou třídou třídy adevs::Atomic. Při spuštění (nebo restartování simulace) se musí veškeré komponenty a jejich propojení vytvořit znovu, protože mohly být v grafickém uživatelském rozhraní přidány nové komponenty a změněny jejich dosavadní propojení. To představuje problém, protože komponenta není tvořena pouze simulační částí (tzv. třídou adevs::Atomic), ale i mnoha dalšími třídami, jejichž chování dědí (je například nutné komponenty vykreslovat v grafickém uživatelské rozhraní - dědit tomu odpovídající třídu). Není však optimální vytvářet objekty v grafickém uživatelském rozhraní znovu při každém restartování simulace.
+Každá simulovaná komponenta tak musí být dceřinou třídou třídy adevs::Atomic. Při spuštění (nebo restartování simulace) se musí veškeré komponenty a jejich propojení vytvořit znovu, protože mohly být v grafickém uživatelském rozhraní přidány nové komponenty a změněny jejich dosavadní propojení.
+
+mTo představuje problém, protože, jak lze vidět na obrázku \ref{fig:adevs_classes}, komponenta není tvořena pouze simulační částí (tzv. třídou adevs::Atomic), ale i mnoha dalšími třídami, jejichž chování dědí (je například nutné komponenty vykreslovat v grafickém uživatelské rozhraní - dědit tomu odpovídající třídu). Není však optimální vytvářet objekty v grafickém uživatelském rozhraní znovu při každém restartování simulace.
 
 Tento problém byl vyřešen oddělením simulační části komponenty do samostatné třídy SimulationObjectWrapper dědící ze třídy adevs::Atomic a využívající návrhový vzor Proxy. Tato třída mapuje volání metod třídy adevs::Atomic na volání třídy SimulationObject, ze které pak všechny simulované komponenty dědí
-své chování. Tento vztah znázorňuje obrázek \ref{fig:adevs_classes} Při restartování simulace tak nemusí být smazána a znovu vytvořena celá komponenta (třída SimulationObject), ale pouze třída SimulationObjectWrapper.
+své chování. Tento vztah znázorňuje obrázek \ref{fig:adevs_classes}. Při restartování simulace tak nemusí být smazána a znovu vytvořena celá komponenta (třída SimulationObject), ale pouze třída SimulationObjectWrapper.
 
-Třída adevs::Simulator potřebuje ke svému běhu také instanci třídy adevs::Network. Tato třída reprezentuje formalismus Spojovaného DEVS a definuje sadu čistě virtuálních metod, které pak dceřiné třídy implementují (například pomocí metody route(...) se směrují události mezi komponentami). Knihovna ADEVS obsahuje několik implementací této třídy. Bohužel jsou však tyto implementace velmi obecné a tím pádem i pomalé. Bylo tak nutné vytvořit novou třídu SimulationModel, která pracuje přímo s objekty typu SimulationObjectWrapper.
+Třída adevs::Simulator potřebuje ke svému běhu také instanci třídy adevs::Network. Tato třída reprezentuje formalismus Spojovaného DEVS a definuje sadu čistě virtuálních metod, které pak dceřiné třídy implementují (například pomocí metody route(...) se směrují události mezi komponentami). Knihovna ADEVS obsahuje několik implementací této třídy.
+
+Bohužel jsou však tyto implementace velmi obecné a tím pádem i pomalé. Bylo tak nutné vytvořit novou třídu SimulationModel, která pracuje přímo s objekty typu SimulationObjectWrapper.
 
 \subsection{Rozšiřitelné periferie formou modulů}
 
-Jak již bylo zmíněno v předchozí podkapitole, každá simulovaná komponenta je dceřinou třídou třídy SimulationObject. Rozšiřitelné moduly umožňují načtení implementace této třídy ze sdílené knihovny nebo z kódu modulu v jazyce Python. Protože je každou komponentu potřeba vykreslit v grafickém uživatelském rozhraní a umožnit interakci uživatele, musí rozšiřitelný modul implementovat rovněž třídu ScreenObject (tato je popsána dále v kapitole TODO). Pro jednoduchost byly tyto dvě třídy zapouzdřeny v třídě Peripheral, která je výslednou třídou pro implementaci rozšiřitelných modulů. Vztahy mezi popsanými třídami je možné vidět na obrázku \ref{fig:adevs_classes}
+Jak již bylo zmíněno v předchozí podkapitole, každá simulovaná komponenta je dceřinou třídou třídy SimulationObject. Rozšiřitelné moduly umožňují načtení implementace této třídy ze sdílené knihovny nebo z kódu modulu v jazyce Python.
+
+Protože je každou komponentu potřeba vykreslit v grafickém uživatelském rozhraní a umožnit interakci uživatele, musí rozšiřitelný modul implementovat rovněž třídu ScreenObject (tato je popsána dále v kapitole \ref{kreslici_plocha}). Pro jednoduchost byly tyto dvě třídy zapouzdřeny v třídě Peripheral, která je výslednou třídou pro implementaci rozšiřitelných modulů. Vztahy mezi popsanými třídami je možné vidět na obrázku \ref{fig:adevs_classes}
 
 \begin{figure}[ht]
 \centering
@@ -602,7 +647,7 @@ Na základě metadat a nahraného kódu modulu je vytvořena instance třídy Pe
 
 Moduly naprogramované v jazyce C++ jsou načítány jako sdílené knihovny pomocí třídy QPluginLoader poskytované knihovnou Qt. Při programování C++ modulů je potřeba kromě třídy Peripheral implementovat rovněž třídu PeripheralInterface (s jedinou metodou create(...)), která slouží pro vytváření nových instancí periferií a kterou QPluginLoader používá k identifikaci modulu.
 
-Ukázku kódu v jazyce C++ implementující jednoduché periferie lze najít v kapitole TODO.
+Ukázku kódu v jazyce C++ implementující jednoduché periferie lze najít v kapitole \ref{oscilator}.
 
 \subsubsection{Moduly v jazyce Python}
 
@@ -612,15 +657,15 @@ Základ pro tvorbu modulů v jazyce Python byl převzat z projektu QDevKit (jedn
 
 Pomocí třídy ScriptEngine jsou načteny moduly v jazyce Python třídou PeripheralManager a jsou dále reprezentovány jako instance třídy Script. Nad třídou Script jsou implementovány třídy PythonPeripheralInterface (rozšiřující třídu PeripheralInterface) a PythonPeripheral (rozšiřující třídu Peripheral).
 
-Třída PythonPeripheralInterface vytváří novou instanci třídy PythonPeripheral, čím vznikne nová periferie. Třída PythonPeripheral dědí rozhraní třídy Peripheral a mapuje všechna její volání pomocí knihovny PythonQt do jazyka Python.
+Třída PythonPeripheralInterface vytváří novou instanci třídy PythonPeripheral, čímž vznikne nová periferie. Třída PythonPeripheral dědí rozhraní třídy Peripheral a mapuje všechna její volání pomocí knihovny PythonQt do jazyka Python.
 
-Ukázka kódu v jazyce Python implementující jednoduché periferie je rovněž popsána dále v kapitole TODO.
+Ukázka kódu v jazyce Python implementující jednoduché periferie je rovněž popsána dále v kapitole \ref{tlacitko}.
 
 \subsection{Rozšiřitelné MCU formou modulů}
 
 Jádro simulátoru rovněž umožňuje implementaci jiných 16 bitových mikrokontrolerů. Tyto mikrokontrolery mohou být načítány pouze jako sdílené knihovny naprogramované v jazyce C++. Mikrokontroler je reprezentován třídou MCU (rozšiřuje třídu Peripheral), která musí být děděna každým mikrokontrolerem.
 
-Třída MCU rozšiřuje třídu Peripheral zejména o možnost přístupu k paměti a registrům mikrokontroleru a přistupu k ladícím informacím pro aktuální program (viz podkapitola TODO).
+Třída MCU rozšiřuje třídu Peripheral zejména o možnost přístupu k paměti a registrům mikrokontroleru a přistupu k ladícím informacím pro aktuální program (viz podkapitola \ref{label_dwarf}).
 
 Paměť MCU je reprezentována třídou Memory, obsahující základní metody pro změnu paměťových buněk (setByte(...), getByte(...) atd.). Umožňuje také nastavit paměťové buňce instanci třídy MemoryWatcher, jejíž metoda handleMemoryChanged(...) (případně handleMemoryRead(...)) je volána pokud došlo ke změně hodnoty na této adrese.
 
@@ -630,19 +675,27 @@ Načítání modulů mikrokontrolerů funguje obdobně jako u periferií. Existu
 
 \subsection{Podpora breakpointů}
 
-Breakpointy umožňují zastavení simulace v případě splnění určíté, předem dané, podmínky. Byly implementovány dva typy breakpointů - zastavení simulace v případě změny hodnoty registru a zastavení simulace v případě změny hodnoty pamětí na určité adrese.
+Breakpointy umožňují zastavení simulace v případě splnění určíté, předem dané, podmínky. Byly implementovány dva typy breakpointů - zastavení simulace v případě změny hodnoty registru a zastavení simulace v případě změny hodnoty paměti na určité adrese.
 
 V obou případech slouží pro registraci breakpointů třída BreakpointManager. Tato třída využívá tříd RegisterWatcher a MemoryWatcher ke sledování registrů a paměti a v případě splnění podmínky breakpointu zastaví simulaci.
 
-V případě zastavení simulace na základě hodnoty registru je jedním z nejčastějších případě zastavení na základě hodnoty registru PC. Tohoto se využívá pro krokování programu nebo jeho zastavení na určité instrukci. Je nutné umožnit nastavení více hodnot jednoho registru jako podmínky pro zastavení simulace. 
+V případě zastavení simulace na základě hodnoty registru je jedním z nejčastějších případů zastavení na základě hodnoty registru PC. Tohoto se využívá pro krokování programu nebo jeho zastavení na určité instrukci. Třída BreakpointManager umožňuje nastavení více hodnot jednoho registru jako podmínky pro zastavení simulace. 
 
 Jelikož ke změně hodnoty registrů dochází velmi často, je potřeba zjistit velmi rychle, zda-li je aktuální hodnota registru důvodem k zastavení simulace. Pro každý registr je uložen seznam všech breakpointů (hodnot registrů). Tento seznam je při vložení nové hodnoty seřazen algoritmem quick sort a pro vyhledání hodnoty v seznamu je využito binární vyhledávání.
 
-V případě zastavení simulace na základě hodnoty v paměti je navíc umožněno zastavit simulaci v případě jakékoliv změny paměti a implementace počítá s možným budoucím rozšířením o složitější podmínky (například příslušnost hodnoty v daném rozsahu nebo změna konkrétního bitu na dané adrese).
+V případě zastavení simulace na základě hodnoty v paměti je navíc umožněno zastavit simulaci v případě jakékoliv změny paměti a implementace počítá s možným budoucím rozšířením o složitější podmínky (například příslušnost hodnoty do daného intervalu nebo změna konkrétního bitu na dané adrese).
 
 \section{Implementace zpracování DWARF informací}
+\label{label_dwarf}
 
 Aby bylo možné při ladění programu získat hodnoty a typ lokálních proměnných, je potřeba načítat a zpracovávat DWARF ladící informace. Pro samotné uchování jednotlivých struktur formátu DWARF byly vytvořeny následující abstraktní třídy (jejich vztahy lze vidět na obrázku \ref{fig:dwarf_classes}):
+
+\begin{figure}[h]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/dwarf_impl}
+\caption{Diagram tříd reprezentujících DWARF struktury.}
+\label{fig:dwarf_classes}
+\end{figure}
 
 \begin{itemize}
 \item \textbf{VariableType} - Třída reprezentující typ proměnné uložené v DWARF informacích. Obsahuje informace jako je například název typu ("int", "char *", ...), velikost typu v bytech, způsob zakódování v paměti nebo například podtyp (v případě že jde o pole prvků jiného typu).
@@ -673,7 +726,7 @@ Hodnotu proměnné je potřeba reprezentovat odpovídajícím způsobem v závis
 
 \section{Implementace knihovny simulující MCU MSP430}
 
-Knihovna simulující MCU MSP430 vykonává instrukce simulovaného programu a poskytuje všechny interní moduly poskytované mikrokontrolerem.
+Knihovna simulující MCU MSP430 vykonává instrukce simulovaného programu a implementuje interní moduly poskytované mikrokontrolerem.
 
 Hlavní třídou knihovny je třída MCU\_MSP430, která reprezentuje celý mikrokontroler. V této třídě jsou vytvářeny a navzájem propojeny jednotlivé dílčí podtřídy, kterými se dále tato kapitola zabývá. Třída MCU\_MSP430 dědí ze třídy MCU a lze ji tak přímo použít jako rozšiřující modul simulátoru.
 
@@ -685,7 +738,7 @@ Implementace knihovny umožňuje simulování většiny podporovaných variant m
 
 Třída Variant obsahuje metody pro získání informací, které jsou pro dané varianty specifické. Jedná se například o adresy jednotlivých portů (metoda getP1DIR()), indexy vektorů přerušení (například metoda getUSART1TX\_VECTOR()) nebo například získání počáteční adresy vektoru přerušení (metoda getINTVECT()).
 
-Vytváření těchto tříd ručně podle dokumentace by bylo značně obtížné a byl proto zvolen lepší přístup. Kompilátor msp430gcc obsahuje pro každou variantu mikrokontroleru hlavičkový soubor definující jednotlivé údaje specifické pro daný mikrokontroler a jeho vlastnosti. Byl vytvořen skript v jazyce Python, kterým lze za použití nástroje msp430-gcc s přepínači -E a -dM získat z tohoto hlavičkového souboru seznam všech těchto definic pro daný mikrokontroler.
+Vytváření těchto tříd ručně podle dokumentace by bylo značně obtížné a byl proto zvolen lepší přístup. Kompilátor msp430gcc obsahuje pro každou variantu mikrokontroleru hlavičkový soubor definující jednotlivé údaje a vlastnosti specifické pro daný mikrokontroler. Byl vytvořen skript v jazyce Python, kterým lze za použití nástroje msp430-gcc s přepínači -E a -dM získat z tohoto hlavičkového souboru seznam všech těchto definic pro daný mikrokontroler.
 
 Tento seznam je pak dále zpracován a jsou z něj vybrány pouze ty definice, které jsou v knihovně simulující MCU MSP430 potřeba. Následně je vygenerována samotná třída Variant a i všechny její implementace - pro každý mikrokontroler jedna.
 
@@ -701,7 +754,7 @@ Při načítání programu je program rovněž disassemblován. To je provedeno 
 
 \subsection{Dekódování a vykonávání instrukcí}
 
-Instrukce je reprezentována instancí třídy Instruction. Tato třída uchovává informace o zdrojovém a cílovem argumentu instrukce, o jejím typu, offsetu a případném bytovém módu. Každý argument je uložen jako implementace abstraktní třídy InstructionArgument definující základní rozhraní pro každý argumentu. Byly implementovány následující typy argumentů:
+Instrukce je reprezentována instancí třídy Instruction. Tato třída uchovává informace o zdrojovém a cílovem argumentu instrukce, o jejím typu, offsetu a případném bytovém módu. Každý argument je uložen jako implementace abstraktní třídy InstructionArgument definující základní rozhraní argumentu. Byly implementovány následující typy argumentů:
 
 \begin{itemize}
 \item \textbf{ConstantArgument} - Argumentem je konstanta.
@@ -711,12 +764,101 @@ Instrukce je reprezentována instancí třídy Instruction. Tato třída uchová
 \item \textbf{Register} - Registr může být také argumentem instrukce a tak již dříve zmíněná třída Register rovněž implementuje třídu InstructionArgument.
 \end{itemize}
 
-Instrukce jsou dekódovány pomocí třídy InstructionDecoder. Tato třída načte aktuální instrukci z paměti, rozparsuje ji, uloží do instance třídy Instruction a vrací počet hodinových cyklů potřebných k těmto úkonům. Ke každé instrukci je definována funkce, která simuluje její vykonání. Tato funkce jako své parametry přijímá ukazatel na paměť (třídu Memory), registry (třídu RegisterSet) a aktuální instrukci (třídu Instruction). Návratovou hodnotou této funkce je rovněž počet hodinových cyklů potřebných k jejímu provedení.
+Instrukce jsou dekódovány pomocí třídy InstructionDecoder. Tato třída načte aktuální instrukci z paměti, rozparsuje ji, uloží do instance třídy Instruction a vrací počet hodinových cyklů potřebných k těmto úkonům. Ke každému typu instrukce je definována funkce, která simuluje její vykonání. Tato funkce jako své parametry přijímá ukazatel na paměť (třídu Memory), registry (třídu RegisterSet) a aktuální instrukci (třídu Instruction). Návratovou hodnotou této funkce je rovněž počet hodinových cyklů potřebných k jejímu provedení.
 
-Ukazatele na tyto funkce (indexované podle operačního kódu a typu) jsou uloženy ve tříde InstructionManager. Tato třída obsahuje metodu executeInstruction(...), která na základě typy a operačního kódu aktuální instrukce tuto instrukci vykoná (spustí příslošnou funkci včetně inkrementace PC registru).
+Ukazatele na tyto funkce (indexované podle operačního kódu a typu instrukce) jsou uloženy ve tříde InstructionManager. Tato třída obsahuje metodu executeInstruction(...), která na základě typu a operačního kódu aktuální instrukce tuto instrukci vykoná (spustí příslušnou funkci včetně inkrementace PC registru).
 
 Z pohledu simulace probíhá dekódování a vykonávání instrukcí ve třídě MCU\_MSP430, konkrétně v její metodě tickRising(...). Tato metoda je zprostředkovaně (za pomocí hodinového modulu) volána simulačním jádrem s každým cyklem MCLK hodin. S ohledem na počet hodinových cyklů potřebných k dekódování a vykonání instrukcí jsou pak instrukce postupně zpracovávány.
 
+\subsection{Implementace pouzdra a pinů mikrokontroleru}
+
+Mikrokontroler MSP430 na svém pouzdru obsahuje piny, ke kterým jsou uvnitř mikrokontroleru připojeny jednotlivé interní periferie. Je potřeba zajistit směrování signálů na správnou interní periferii a umožnit každé variantě mikrokontroleru definovat své vlastní pouzdrou.
+
+\subsubsection{Pouzdro mikrokontroleru}
+
+Pro uložení informace o pouzdru mikrokontroleru a možných pinech a jejich interních propojeních byl zvolen XML formát. Pro každou variantu mikrokontroleru je k dispozici XML soubor v následujícím formátu:
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+<variant>
+<package name="MSP430x11x">
+	<left>
+		...
+		<pin id="8">
+			<name sel="0">P2.0</name>
+			<name>ACLK</name>
+		</pin>
+		...
+	</left>
+	<right>
+		...
+		<pin id="13">
+			<name sel="0">P1.0</name>
+			<name dir="1" sel="1">TACLK</name>
+			<name dir="0" sel="1">TACLK</name>
+		</pin>
+		...
+	</right>
+</package>
+</variant>
+\end{lstlisting}
+
+Uvnitř elementu "<package>" se nachází definice pouzdra jedné varianty mikrokontroleru. Jednotlivé piny pouzdra jsou členěny podle strany pouzdra na které jsou umístěny: "left", "down", "right", "up". V těchto elementech se pak nachází samotné definice pinů. Každý pin má své id korespondující s číslováním pinu na pouzdru.
+
+Jelikož může být k jednomu pinu připojeno více interních periferíí, má pin více jmen (element "name"). Aktuální jméno (a tím pádem i aktuální interní periferie připojená k pinu) je dáno konfigurací řídících registrů daného pinu. Typicky se jedná o PxDIR, PxSEL a PxSEL2. Element "name" umožňuje definovat hodnoty bitů těchto registrů odpovídající danému pinu pomocí atributů "sel", "dir" a "sel2". Tyto informace jsou pak využívány při mapování pinů na interní periferie.
+
+Při vybrání konkrétní varianty mikrokontroleru MSP430 je načteno jeho pouzdrou pomocí třídy Package, která tento XML soubor zpracuje a vytvoří struktury potřebné k jeho vykreslení třídou MCU\_MSP430.
+
+\subsubsection{Směrování signálů}
+
+Pro každý pin načtený třídou Package je vytvořena instance třídy PinMultiplexer. Tato třída obsahuje seznam jmen všech interních periferií mapovaných na tento pin včetně podmínek určujících, kdy je která interní periferie aktivní. Třída PinMultiplexer obsahuje také seznam jmen všech interních periferií, kde ke každému jménu je přiřazena instance třídy PinHandler.
+
+V případě změny řídícího registru (například PxSEL), jsou znovy vyhodnoceny podmínky uložené v instanci třídy PinMultiplexer a pokud došlo ke změně aktivní interní periferie, jsou všechny následující vstupní signály směrovány na nově aktivovanou interní periferii (reprezentovanou instancí třídy PinHandler).
+
+Všechny instance třídy PinMultiplexer jsou spravovány třídou PinManager. Tato třída zpracovává veškeré vstupní signály mikrokontroleru MSP430, které mu předává simulační jádro. Pro každý vstupní signál je znám index pinu na který signál dorazil. Třída PinManager tak vyhledá instanci třídy PinMultiplexer tohoto pinu a zavolá její metodu handlePinInput(...), čímž přesune zpracování události na konrétní pin. Ten jej pak jen předá na aktivní instanci třídy PinHandler konkrétní interní periferii.
+
+Při generování signálů je postup podobný. Interní periferie zavolá metodu generateOutput(...) třídy PinMultiplexer. Tato metoda ověří, zda-li je interní periferie aktivní pro daný pin. Pokud je aktivní, zavolá metodu generateOutput(...) třídy PinManager, která signál umístí na výstup kde jej přebere simulační jádro.
+
+\subsubsection{Interní signály}
+
+V rámci mikrokontroleru MSP430 existují i signály mezi interními periferiemi, které nejsou vyvedeny na piny na pouzdru. Pro reprezentaci a směrování těchto signálů slouží třída SignalManager. Jedná se třídu, pomocí které si může libovolná interní periferie zaregistrovat jméno signálu, který pak v budoucnu generuje. Ostatní periferie se mohou zaregistrovat k přijímání tohoto signálu.
+
+\subsection{Implementace přerušení}
+
+Při vzniku přerušení dojde po aktuální instrukci k zavolání rutiny přerušení definované adresou ve vektoru přerušení. Správa přerušení je v rámci knihovny simulující mikrokontroler MSP430 implementována ve třídě InterruptManager.
+
+Interní periferie využívají k vygenerování přerušení metodu queueInterrupt(...). Tato metoda naplánuje nové přerušení. Jakmile dojde k dokončení simulace aktuální instrukce třídou MCU\_MSP430, zavolá tato třída metodu runQueuedInterrupts() třídy InterruptManager. Tato metoda přeruší aktuální program a spustí vykonávání rutiny přerušení s nejvyšší prioritou.
+
+Interní periferie mohou implementovat třídu InterruptWatcher a být tak informovány o návratu z rutiny přerušení.
 
 \subsection{Hodinový modul}
 
@@ -724,19 +866,44 @@ Hodinový modul umožňuje časování instrukcí a dalších interních perifer
 
 \begin{itemize}
 \item \textbf{Oscilátory} - Skupina tříd dědících třídu Oscillator. Tyto třídy poskytují zdroj hodinového signálu další skupině tříd a jako jediné komunikují přímo s knihovnou ADEVS. Jedná se například o oscilátory LFXT1, VLO, XT2 nebo DCO.
-\item \textbf{Hodiny} - Skupina tříd dědících třidu Clock. Tyto třídy využívají Oscilátory jako zdroj svého signálu (a většinou umožňují měnit v závislosti na svých registrech mezi více oscilátory). Jedná se například o hodiny MCLK, SMCLK nebo ACLK.
+\item \textbf{Hodiny} - Skupina tříd dědících třídu Clock. Tyto třídy využívají Oscilátory jako zdroj svého signálu (a většinou umožňují přepínat v závislosti na svých registrech mezi více oscilátory). Jedná se například o hodiny MCLK, SMCLK nebo ACLK.
 \item \textbf{Časovač} - Třída reprezentující jeden časovač (například TimerA)  mikrokontroleru MSP430.
 \end{itemize}
 
-\subsection{Implementace pinů}
+\subsubsection{Oscilátory}
+
+Základem oscilátorů je již zmíněná třída Oscillator. Tato třída definuje základní rozhraní oscilátoru. Jedná se zejména o možnost zaregistrování instancí tříd OscillatorHandler, jejichž metody tickRising() a tickFalling() jsou volány při náběžné a sestupné hraně signálu. Třída Oscillator sama o sobě neposkytuje zdroj signálu, ale očekává, že bude ve správných intervalech volána její metoda tick().
+
+V případě, že dojde k odebrání všech instancí tříd OscillatorHandler, je oscilátor pozastaven zavoláním metody pause(). Tím se zabrání zbytečnému tikání oscilátoru, který aktuálně není k ničemu potřeba. Při opětovném zaregistrování instance třídy OscillatorHandler je funkce oscilátoru znovu obnovena metodou start().
+
+Třídy VLO a DCO rozšiřující třídu Oscillator implementují shodně pojmenované MSP430 oscilátory. Tyto třídy dědí rovněž třídu SimulationObject a chovají se jako samostatné simulační jednotky. Podle aktuálně nastavené frekvence naplánují svůj interní přechod za použití knihovny ADEVS v pevně stanovených intervalech. V tomto interním přechodu pak volají metodu tick(), čímž simulují pravidelné tikání oscilátoru.
+
+Třídy LFXT1 a XT2 rovněž implementují třídu Oscillator a volají její metodu tick(). Volání této metody však neprobíhá na základě předem stanovené frekvence, ale podle změn signálu odpovídajících vstupních pinů. Tyto dva oscilátory tak nepoužívaji knihovnu ADEVS přímo, ale implementují třídu PinHandler a s její pomocí jsou napojeny na vstupní piny mikrokontroleru.
+
+\subsubsection{Hodiny}
+
+Základní třídou hodin je třída Clock. Tato třída plní stejnou funkci jako třída Oscillator pro oscilátory - definuje jejich základní rozhraní, umožňuje registrování instancí třídy ClockHandler a umožňuje volání jejich metod pomocí svých metod callRisingHandlers() a callFallingHandlers().
+
+Třídu Clock dědí třídy ACLK, MCLK a SMCLK reprezentující stejnojmenné hodiny mikrokontroleru MSP430. Tyto třídy rovněž implementují třídu OscillatorHandler a na základě hodnoty svých řídicích registrů umožňují nastavovat zdrojový oscilátor a jeho děličku. Při každém tiku hodin jsou zavolány metody zaregistrovaných instancí tříd ClockHandler, které pak dále na hodinový signál reagují.
+
+\subsubsection{Časovač}
+
+Poslední částí hodinového modulu je Časovač. Jedná se o interní periferii implementující třídy ClockHandler, MemoryWatcher, InterruptWatcher a PinHandler. Tato periferie tak reaguje na hodinový signál, změny hodnot na určitých adresách v paměti, ukončení přerušení, vstupní signály a rovněž umožňuje generování výstupních signálů.
+
 
 \subsection{Komunikační moduly}
 
+Komunikační moduly umožňují komunikaci mikrokontroleru s jinými zařízeními. Jak již bylo zmíněno, v rámci této diplomové práce byla implementována pouze komunikace v módu SPI, avšak byla implementována v rámci všech třech komunikačních modulů - USI, USCI a USART.
+
+Jednotlivé moduly jsou velmi obsáhlé, ale princip jejich tvorby se nelišil od časovače. Každý modul je tvořen jednou třídou implementující třídy ClockHandler, MemoryWatcher, InterruptWatcher, PinHandler a SignalHandler. Za pomocí těchto tříd komunikuje modul s ostatními částmi knihovny a implementuje nad nimi své chování.
+
+Jelikož je potřeba vytvářet komunikační moduly v závislosti na variantě daného mikrokontroleru, existuje ke každé třídě modulu ještě pomocná třída, která vytvoří správný počet instancí daného modulu v závislosti na datech z aktuální instance třídy Variant.
+
 \subsection{Automatické testování}
 
-Knihovna simulující MCU MSP430 je jako jediná z celého simulátoru pokryta sadou automatických testů. Jedná se celkem o sadu 56 testů testujících jednotlivé části knihovny.
+Knihovna simulující MCU MSP430 je jako jediná z celého simulátoru pokryta sadou automatických testů. Jedná se o sadu celkem 56 testů testujících jednotlivé části knihovny.
 
-Pro implementaci testů je použita knihovna CPPUnit. Každá testovaná třída z knihovny má svoji odpovídající CPPUnit třída, která ji testuje. Testování probíhá jak na základě znalostí vnitřní architektury knihovny (white box), tak pouze na základě vstupního programu a sledování reakcí knihovny na tento program (black box).
+Pro implementaci testů je použita knihovna CPPUnit. Každá testovaná třída z knihovny má svoji odpovídající CPPUnit třídu, která ji testuje. Testování probíhá jak na základě znalostí vnitřní architektury knihovny (white box), tak pouze na základě vstupního programu a sledování reakcí knihovny na tento program (black box).
 
 První třída testů většinou testuje konkrétni metody daných tříd knihovny. Jako příklad lze uvést testy dekódování instrukcí, testy pamětí a registrů nebo například test směrování signálů mezi piny.
 
@@ -750,13 +917,17 @@ Grafické uživatelské rozhraní (GUI) je naprogramováno v jazyce C++ za použ
 
 Základní třídou celé aplikace je třída QSimKit reprezentující její hlavní okno. Tato třída vytváří a zapouzdřuje všechny další části GUI popsané dále v této části diplomové práce.
 
-Hlavní okno aplikace lze vidět na obrázku TODO. Na horní části okna jsou ovládácí prvky určené k řízení simulace a nastavení velikosti kroku při jejím krokování. Ve středu okna se nachází kreslicích plocha popsaná v podkapitole TODO. V levé části okna je TODO
+Hlavní okno aplikace lze vidět na obrázku \ref{fig:screen}. Na horní části okna jsou ovládácí prvky určené k řízení simulace a nastavení velikosti kroku při jejím krokování. Ve středu okna se nachází kreslící plocha popsaná v podkapitole \ref{kreslici_plocha}. V levé části okna jsou zobrazeny detaily periferií a mikrokontroleru (podkapitola \ref{detaily_per}). Pravá část okna zobrazuje aktuální program běžící uvnitř mikrokontroleru (podkapitopla \ref{screen_disassembler}) a ve spodní části okna lze formou osciloskopu sledovat jednotlivé piny (podkapitola \ref{screen_tracking}).
 
-\subsection{Správa projektu}
-
-TODO: Ukladani, vytvoreni noveho projektu
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.45]{fig/screen}
+\caption{Hlavní okno grafického uživatelského rozhraní.}
+\label{fig:screen}
+\end{figure}
 
 \subsection{Kreslící plocha}
+\label{kreslici_plocha}
 
 Kreslící plocha zobrazuje MCU a jednotlivé periferie včetně jejich propojení. Umožňuje přidání nových periferí, odebrání stávajících a jejich propojování.
 
@@ -774,9 +945,17 @@ Lze také vytvořit propojení více než dvou objektů. V tomto případě je n
 
 \subsubsection{Přidání nové periferie na kreslící plochu}
 
-Pro přidání nové periferi na kreslící plochu slouží dialogové okno AddPeripheral. To prostřednictvím instance třídy PeripheralManager získá seznam všech dostupných periferií a umožní uživateli jejich výběr. Tento dialog také zobrazuje náhled periferi za pomocí třídy ScreenObjectPreview. Tato třída vytváří novou dočasnou instanci periferie a vykreslí ji.
+Pro přidání nové periferi na kreslící plochu slouží dialogové okno AddPeripheral (viz obrázek \ref{fig:addperipheral}) vyvolané pomocí kontextového menu kreslící plochy. Toto dialogové okno prostřednictvím instance třídy PeripheralManager získá seznam všech dostupných periferií a umožní uživateli jejich výběr. Tento dialog také zobrazuje náhled periferi za pomocí třídy ScreenObjectPreview. Tato třída vytváří novou dočasnou instanci periferie a vykreslí ji.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm]{fig/addperipheral}
+\caption{Dialog pro přidání nové periferie.}
+\label{fig:addperipheral}
+\end{figure}
 
 \subsection{Detaily periferií a mikrokontroleru}
+\label{detaily_per}
 
 Detaily jednotlivých periferií a mikrokotroleru lze vidět v levé části hlavního okna. Základem je třída Peripherals obsahující seznam všech položek jednotlivých periferií uložených a zobrazených pomocí Qt třídy QTreeWidget. Při přidání nebo odebrání nové periferie je zavolána její metoda getPeripheraLItem(...), která vrátí položku periferie (instanci třídy PeripheralItem) reprezentující tuto periferii v seznamu periferií.
 
@@ -787,6 +966,7 @@ Třída MemoryItem je využita pro položky zobrazující hodnotu místa v pamě
 Třída VariableItem pak slouží k zobrazení hodnoty lokálních proměnných za pomocí DWARF ladících informací.
 
 \subsection{Disassembler}
+\label{screen_disassembler}
 
 Disassembler slouží k zobrazení zdrojového kódu programu aktuálně zpracovávaného mikrokontrolerem. Hlavní třídou je třída Disassembler. Při pridání nového mikrokontrolu nebo změně jeho programu je znovu nahrán disassemblovaný kód a případné ladící informace. Zdrojový kód je zobrazen v Qt objektu typu QTreeWidget. V horní části disassembleru může uživatel vybrat zdrojový soubor programu a název funkce, kterou chce v tomto zdrojovém souboru zobrazit. Zobrazení zdrojového kódu lze přepínat mezi assemblerem a zdrojovým kódem v jazyce C.
 
@@ -795,6 +975,7 @@ Po přerušení simulace (nebo například krokování programu) je na základě
 Diassembler rovněž přidává instanci třídy DisassemblerItem implementující třídu PeripheralItem do detailů periferií. Uživatel tak při krokování nebo přerušení simulace vidí v detailech periferí hodnoty lokálních proměnných v aktuální funkci.
 
 \subsection{Sledování pinů}
+\label{screen_tracking}
 
 Sledování pinů (na obrázku simulátoru dole) je umožněno pomocí třídy TrackedPins. Tato třída je napojena na signály třídy Screen informující o změně sledovaných pinů (Sledování lze pro každý pin nastavit v jeho kontextovém menu na kreslící ploše). Pokud dojde ke změně sledovaných pinů, třídy TrackedPins přidá nebo odstraní tento pin z instance třídy Plot, kterou zapouzdřuje.
 
@@ -804,14 +985,217 @@ Pokud dojde k přeposlání simulační události třídou SimulationObjectWrapp
 
 Třída Plot rovněž umožňuje měnit měřítko grafu, označovat jeho úseky a zobrazuje délku označeného úseku v sekundách.
 
+\subsection{Správa projektu}
+
+Základní funkcí GUI je správa projektu. Jedná se zejména o jeho vytvoření, uložení a opětovné nahrání.
+
+\subsubsection{Vytvoření projektu}
+
+Bezprostředně po vytvoření nového projektu je zobrazen dialog ProjectConfiguration umožňující jeho konfiguraci. Tento dialog (viz obrázek \ref{fig:projectconf}) umožňuje výběr rodiny mikrokontrolerů pro projekt (aktuálně pouze MSP430) a výběr konkrétního modelu mikrokontroleru. Ve středu dialogu je zobrazena ukázka daného mikrokontroleru. Pomocí tlačítka "Show features" je možné zobrazit vlastnosti daného mikrokontroleru podporované simulátorem.
+
+Po potvrzení dialogu je vybraný mikrokontroler vložen na kreslící plochu a lze s ním dále pracovat.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/projectconf}
+\caption{Dialog pro konfiguraci projektu.}
+\label{fig:projectconf}
+\end{figure}
+
+\subsubsection{Formát uložených projektů}
+
+Projekt je možné uložit do souboru ve formátu XML s příponou "qsp" (QSimkit Project). Základní vnitřní členění tohoto souboru je následující:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt}
+\begin{lstlisting}
+<qsimkit_project>
+	<objects>
+		<object id='0' type='msp430' interface='mcu' name='MSP430'>
+			<position x='192' y='60'/>
+			<code> ... </code>
+			<variant>msp430x16x</variant>
+			<a43path> ... </a43path>
+			<elfpath> ... </elfpath>
+			<elf> ... </elf>
+		</object>
+	...
+	</objects>
+	<connections> ... </connections>
+	<trackedpins> ... </trackedpins>
+	<registerbreakpoints> ... </registerbreakpoints>
+	<memorybreakpoints> ... </memorybreakpoints>
+</qsimkit_project>
+\end{lstlisting}
+
+Kořenovým elementem je element "qsimkit\_project". Jeho vnitřní elementy pak mají následující význam:
+
+\begin{itemize}
+\item \textbf{objects} - Uchovává seznam všech objektů vytvořených v rámci projektu.
+\begin{itemize}
+\item \textbf{object} - Každý objekt má sváj typ, jméno a pozici. Každý objekt může kromě těchto základních informací ukládat i informace pro něj specifické. Například objekt s rozhraním typu "mcu" reprezentuje mikrokontroler a jako rozšiřující informace ukládá kód aktuálního programu a cestu k jeho zdroji.
+\end{itemize}
+\item \textbf{connections} - Reprezentuje propojení mezi objekty. O každém propojení jsou známy jeho uzlové body na kreslící ploše a objekty s jejich piny, které propojení spojuje.
+\item \textbf{trackedpins} - Slouží pro uložení seznamu sledovaných pinů.
+\item \textbf{registerbreakpoints} - Uchovává seznam všech bodů zastavení pro registry. 
+\item \textbf{memorybreakpoints} - Analogicky v registerbreakpoints uchovává seznam všech bodů zastavení pro paměťové buňky.
+\end{itemize}
+
+
+\subsubsection{Uložení a nahrání projektu}
+
+Uložení je iniciováno ze třídy QSimKit, která umožní uživateli výběr místa pro uložení projektu, vytvoří QSP soubor a k němu odpovídající instanci třídy QTextStream. Ukládání dat do tohoto souboru pak provádí další třídy simulátoru. Třída Screen ve své metodě save(...) projde seznam všech svých objektů, uloží do souboru jejich základní informace a pro informace rozšířené zavolá metodu save(...) každého objektu. V této metodě pak mají jednotlivé objekty možnost uložit pro ně specifické informace.
+
+Obdobně je volána metoda save(...) třídy ConnectionManager ukládající informace o spojeních mezi objekty.
+
+Nahrávání projektu probíhá analogicky s tím rozdílem, že jsou volány metody load(...) jednotlivých tříd, které z instance třídy QDomDocument získají potřebná data.
+
+\section{Implementované rozšiřující moduly}
+
 \chapter{Verifikace}
 
+V rámci této kapitoly je popsán postup verifikace simulátoru, jednotlivé testy a jejich výsledky. Cílem verifikace bylo převážně ověření časování funkcí mikrokontroleru a jeho výstupu. Vzhledem k využití automatických testů při implementaci knihovny simulující mikrokontroler MSP430 je právě časování jedinou neotestovanou částí simulátoru.
 
-\chapter{Případová studie}
+Verifikace probíhala za použití zařízení FITKit verze 1.2 s mikrokontrolerem TODO. Do tohoto mikrokontroleru byly nahrávány testovací programy a výstup mikrokontroleru byl snímán dvoukanálovým osciloskopem TODO. Následně byl stejný program spuštěn v simulátoru a za pomocí sledování pinů byly naměřeny hodnoty ze stejných pinů jako na reálném mikrokontroleru.
+
+V dalších podkapitolách jsou jednotlivé testovací programy podrobněji rozebrány a okomentovány jejich výsledky.
+
+\section{Verifikace vztahu mezi instrukcemi a MCLK}
+
+Tento test byl zaměřen na ověření časování instrukcí a jejich návaznost na tikání MCLK hodin. Byl použit jednoduchý program, který nastaví počáteční frekvenci mikrokontroleru (registry BCSCTL1 a DCOCTL). Dále nastaví pin P1.4 jako výstupní a na jeho výstup zvolí hodinový signál SMCLK. Tento signál je standardně nastaven na stejnou frekvenci jako MCLK a lze jej tak považovat v rámci tohoto testu jako ekvivalentní MCLK. Výstup MCLK nemohl být použit přímo z důvodu konstrukce zařízení FITKit. Jako výstupní byl rovněž nastaven pin P1.7, na kterém pak ve smyčce program invertuje jeho hodnotu. Celý kód programu vypadal takto:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt}
+\begin{lstlisting}
+#include "msp430x16x.h"
+int main(void) {
+	WDTCTL = WDTPW + WDTHOLD;
+	BCSCTL1 = ((BCSCTL1 & ~(0x0f)) | 7);
+	DCOCTL  = ((DCOCTL & ~(0xe0)) | (3 << 5));
+	P1DIR |= BIT7 | BIT4;
+	P1SEL |= BIT4;
+	for(;;) {
+		P1OUT ^= BIT7;
+	}
+}
+\end{lstlisting}
+
+Osciloskop byl připojen k pinům P1.7 a P1.4. Cílem bylo změřit frekvenci mikrokontroleru, frekvenci invertování pinu P1.7 a počet tiků mikrokontroleru během jednoho invertování pinu P1.7. Výsledek měření lze vidět na obrázku \ref{fig:dso04osc}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/dso04}
+\caption{Naměřené hodnoty osciloskopem na reálném mikrokontroleru.}
+\label{fig:dso04osc}
+\end{figure}
+
+Z výsledku je patrné, že délka setrvání pinu P1.7 v jednom stavu je 2.312 us. Během tohoto času dojde k 7 tikům mikrokontroleru. Perioda jednoho tiku je tak 0.33028 us, což odpovídá frekvenci mikrokontroleru 3.027 MHz.
+
+Na obrázku \ref{fig:dso04sim} lze vidět výstup stejného programu běžícího v simulátoru.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/dso04sim}
+\caption{Naměřené hodnoty v simulátoru.}
+\label{fig:dso04sim}
+\end{figure}
+
+V simulátoru setrval pin P1.7 v jednom stavu po dobu 2.31359 us. Rovněž došlo k sedmi tikům mikrokontroleru a perioda jednoho tiku je tak 0.33051 us. To odpovída frekvenci mikrokontroleru 3.025 Mhz.
+
+Z porovnání výsledků lze vidět, že časování simulátoru je velmi blízké reálnému mikrokontroleru. Odchylka je způsobena zejména standardně využitým DCO oscilátorem, který může dosahovat na reálném mikrokontroleru větších nepřesností. Při použití přesného externího oscilátoru lze očekávat ještě přesnější výsledky.
+
+\section{Verifikace časování instrukcí}
+
+Tento test je podobný jako test předchozí, ale do hlavní smyčky programu byla vložena další čekací smyčka, která prodlužuje frekvenci invertování pinů. Cílem testu je ověřit časování instrukcí na delším časovém úseku. Pro vizuální kontrolu na zařízení FITKit je invertován rovněž pin P1.0 blikající červenou diodou.
+
+Celý kód programu vypadal takto:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt}
+\begin{lstlisting}
+#include "msp430x16x.h"
+int main(void) {
+	volatile unsigned int i = DELAY;
+	WDTCTL = WDTPW + WDTHOLD;
+	BCSCTL1 = ((BCSCTL1 & ~(0x0f)) | 7);
+	DCOCTL  = ((DCOCTL & ~(0xe0)) | (3 << 5));
+	P1DIR |= BIT0 | BIT7;
+	P1OUT = BIT0;
+	for(;;) {
+		i = 32000;
+		P1OUT ^= BIT0;
+		P1OUT ^= BIT7;
+		do
+			i--;
+		while (i > 0);
+	}
+}
+\end{lstlisting}
+
+Osciloskop byl připojen pouze k pinu P1.7. Výsledek měření lze vidět na obrázku \ref{fig:dso05osc}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/dso05}
+\caption{Naměřené hodnoty osciloskopem na reálném mikrokontroleru.}
+\label{fig:dso05osc}
+\end{figure}
+
+Doba setrvání pinu P1.7 v jednom stavu byla 62.5 ms. Výsledky stejného programu simulovaného v simulátoru lze vidět na obrázku \ref{fig:dso05sim}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/dso05}
+\caption{Naměřené hodnoty v simulátoru.}
+\label{fig:dso05sim}
+\end{figure}
+
+Z porovnání výsledků opět vyplývá, že simulovaný program odpovídá programu na reálném mikrokontroleru. Drobná odchylka je způsobena rozdílnou frekvencí reálného mikrokontroleru. Ke zpřesnění by opět došlo při použití externího oscilátoru místo interního oscilátoru DCO.
+
+\section{Verifikace časovače}
+
+Cílem tohoto testu je ověřit správnou funkci časovače za použití jednoduchého programu invertujícího periodicky výstupní pin P1.7. Program nastaví časovač na vyvolání přerušení při napočítání do 1260. Po pěti přerušeních je invertován pin P1.7.
+
+Celý kód programu vypadal takto:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt}
+\begin{lstlisting}
+#include "msp430x16x.h"
+#include <signal.h>
+volatile unsigned int count = 0;
+interrupt(TIMERA0_VECTOR) timer_interrupt(void) {
+	if (++count == 5) {
+		P1OUT ^= BIT7;
+		count = 0;
+	}
+}
+
+int main(void) {
+	WDTCTL = (WDTPW + WDTHOLD);
+	BCSCTL1 = ((BCSCTL1 & ~(0x0f)) | 7);
+	DCOCTL  = ((DCOCTL & ~(0xe0)) | (3 << 5));
+	TACTL |= (TASSEL_2 + ID_0 + TACLR);
+	CCR0 = 1260;
+	CCTL0 = CCIE;
+	TACTL |= MC_1;
+
+	P1DIR |= BIT7 | BIT4;
+	P1SEL |= BIT4;
+	P1OUT |= BIT7;
+
+	__enable_interrupt();
+	int dummy = 1;
+	while(1) dummy++;
+	return 0;
+}
+
+\end{lstlisting}
+
+\chapter{Případová studie - tvorba rozšiřujících modulů}
 
 Cílem této kapitoly je popsat a názorně ukázat modulárnost implementovaného simulátoru prostřednictvím tvorby dvou nových periferií - tlačítka a oscilátoru. Pro názornost bude tlačítko naprogramováno v jazyce Python a oscilátor v jazyce C++. Tato kapitola rovněž prakticky popisuje rozhraní pro tvorbu nových modulů pro oba tyto jazyky.
 
 \section{Rozšíření simulátoru o tlačítko v jazyce Python}
+\label{tlacitko}
+
+Tlačítko je jednoduchou periferií měnící svůj výstup na základě svého vnitřního stavu. Uživateli je umožněno tlačítko stisknout, čímž dojde ke změně jeho stavu a tím pádem i výstupu. Výstup tlačítka v závislosti na jeho stavu (tzv. je-li výstup při sepnutém tlačítku logiká 1 nebo 0) bude konfigurovatelný.
 
 První část rozšíření simulátoru o novou periferii spočívá ve tvorbě XML souboru popisující nově vytvářenou periferii. Simulátor informace z tohoto XML souboru zobrazuje ve svém grafickém uživalském rozhraní a využívá jich rovněž k nalezení samotného skriptu v jazyce Python definujícího chování periferie.
 
@@ -830,7 +1214,7 @@ Tento XML soubor musí být pojmenován "peripheral.xml" a musí obsahovat všec
 </peripheral>
 \end{lstlisting}
 
-Jednotlivé řádky definují metadata o dané rozšiřující periferii. Důležitý je zejména tag "library", jehož hodnota určuje název skriptu v jazyce Python (bez přípony ".py"), který se simulátor pokusí načíst.
+Jednotlivé řádky definují metadata o dané rozšiřující periferii. Důležitý je zejména element "library", jehož hodnota určuje název skriptu v jazyce Python (bez přípony ".py"), který se simulátor pokusí načíst.
 
 \subsection{Tvorba modulu v jazyce Python}
 
@@ -875,6 +1259,38 @@ class Peripheral():
 \end{lstlisting}
 
 Při vytvoření nové instance tlačítka v simulátoru je vytvořena nová instance třídy Peripheral a spuštěn její konstruktor:
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=5, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
 \begin{lstlisting}
 	def __init__(self):
 		# Povinné proměnné potřebné pro simulátor:
@@ -892,8 +1308,913 @@ Při vytvoření nové instance tlačítka v simulátoru je vytvořena nová ins
 		self.out = []	# události připravené ke generování
 \end{lstlisting}
 
-\section{Rozšíření simulátoru o oscilátor v jazyce C++}
+V konstruktoru jsou nejprve inicializovány proměnné potřebné pro správnou funkci simulátoru. Jedná se o rozměry periferie, seznam pinů a seznam voleb zobrazených v kontextovém menu tlačítka. Dále jsou vytvořeny proměnné využité v dalším metodách tlačítka.
 
+\subsubsection{Vykreslení tlačítka}
+
+K vykreslení periferie slouží metoda paint(...):
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=19, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+	def paint(self):
+		p = QPainter();
+		p.begin(self.screen);
+		# Vykreslení obrysu tlačítka
+		p.drawRect(self.x, self.y + 6, 24, 24)
+
+		color = Qt.black	# Standardní barva výplně
+		if self.state:		# Pokud je tlačítko sepnuto ...
+			color = Qt.green	# ... zvolíme zelenou barvu
+
+		# Vykreslení symbolu tlačítka
+		p.setPen(QPen(Qt.black, 2, Qt.SolidLine))
+		p.setBrush(QBrush(color))
+		p.drawLine(self.x + 3, self.y + 18, self.x + 3, self.y + 18);
+		p.drawLine(self.x + 22, self.y + 18, self.x + 22, self.y + 18);
+		if self.state:
+			p.drawLine(self.x + 8, self.y + 18, self.x + 18, self.y + 18);
+		else:
+			p.drawLine(self.x + 8, self.y + 18, self.x + 18, self.y + 12);
+
+		p.setPen(QPen(Qt.black, 1, Qt.SolidLine))
+		p.setBrush(QBrush())
+		p.drawEllipse(self.x + 3, self.y + 16, 4, 4);
+		p.drawEllipse(self.x + 17, self.y + 16, 4, 4);
+
+		# Vykreslení pinu na pouzdře tlačítka
+		for rect in self.pins:
+			if self.state == self.highWhenPushed:
+				p.fillRect(rect, QBrush(QColor(0,255,0)))
+			p.drawRect(rect)
+\end{lstlisting}
+
+Tato metoda využíva vykreslování pomocí knihovny Qt, konkrétně její třída QPainter. Vykreslování probíha na objekt self.screen reprezentující kreslící plochu GUI. Programátor tak má velkou svobodu v ovlivnění vzhledu periferie.
+
+\subsubsection{Implementace logiky tlačítka}
+
+Pro správnou funkci tlačítka je potřeba, aby došlo při stisknutí tlačítka k vygenerování odpovídajícího signálu na jeho pinu. O kliknutí je tlačítko informováno zavoláním jeho metody clicked(...):
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=49, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+	def clicked(self, p):	# p: (x,y) pozice myši
+		self.state = not self.state	# Přepnutí tlačítka
+		self.screen.update()	# Požadavek o překreslení
+		# Vygenerování (X,Y) výstupu podle aktuálního nastavení
+		# X: index pinu pro který se generuje výstup
+		# Y: hodnota napětí na výstupním pinu
+		if self.state:
+			if self.highWhenPushed:
+				self.out.append((0, 3.0))
+			else:
+				self.out.append((0, 0.0))
+		else:
+			if self.highWhenPushed:
+				self.out.append((0, 0.0))
+			else:
+				self.out.append((0, 3.0))
+		# Informování simulátoru, že je k dispozici nový výstup
+		self.hasNewOutput = True
+\end{lstlisting}
+
+V případě, že uživatel na tlačítko klikne, je změněn jeho stav a vygenerován nový výstup do výstupního seznamu "self.out". Simulátor po zavolání metody clicked(...) ověří hodnotu proměnné "self.hasNewOutput". Prokud je tato proměnná nastavena na True, je zavolána metoda timeAdvance(...) pro naplánování času , kdy se má výstupní událost uskutečnit.
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=67, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+	def timeAdvance(self):
+		# Pokud máme výstupní signál, výstup musí být okamžitý
+		if not len(self.out) == 0:
+			return 0
+		# V opačném případě vrátíme dostatečně velké číslo
+		return 365
+\end{lstlisting}
+
+Metoda timeAdvance(...) je volána simulátorem v případě, kdy je potřeba naplánovat další akci periferie. Po startu simulace je tato metoda zavolána pro naplánování první akce tlačítka. Jelikož tlačítko není autonomní a neprovádí samo od sebe žádné akce, tak v případě, kdy není k naplánován žádný výstupní signál, naplánuje svou další akci do velmi vzdálené budoucnosti. Tím je zajištěno, že simulátor nebude volat žádné metody tlačítka aniž by to tlačítko samo nevyžádalo pomocí proměnné "self.hasNewOutput".
+
+V případě, kdy má tlačítko naplánován výstup, vrací číslo 0, čímž říká simulátoru, že chce svou další akci spustit okamžitě. Simulátor na tento požadavek reaguje zavoláním metody internalEvent(...). Protože však tlačítko neprovádí žádné autonomní naplánované změny stavu, je tato metoda prázdná:
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=73, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+	def InternalEvent(self):
+		pass
+\end{lstlisting}
+
+Dalším krokem simulátoru je zavolání metody output(...):
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=75, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+	def output(self):
+		if len(self.out) == 0:
+			return ()
+		return self.out.pop(0)
+\end{lstlisting}
+
+Pokud je k naplánována výstupní událost v proměnné "self.out", je tato událost předána simulátoru. Ten ji pak přepošle v závislosti na zapojení cílové periferii a zavolá znovu metodu output(...). Pokud již nejsou k dispozici žádné události, je vrácena prázdná událost a opět zavolána metoda timeAdvance(...) pro naplánování další události tlačítka.
+
+Pokud by tlačítko přijímalo na svém pinu vstupní události, byly by tlačítku doručeny pomocí metody externalEvent(...). Jelikož však tlačítko události pouze generuje, je tato metoda prázdná:
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=79, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+	def externalEvent(self, pin, value):
+		pass
+\end{lstlisting}
+
+\subsubsection{Konfigurování tlačítka}
+
+Tlačítko disponuje jedinou konfigurační volbou - lze u něj nastavit, bude-li po sepnutí ve stavu logické 1 nebo 0. Toto nastavení je potřeba ukládat a načítat společne s projektem. K tomuto účelu slouží metody save(...) a load(...). pro jednodušší přidávání nových voleb je implementována rovněž metoda simpleParser(...) umožňující jednoduché parsování XML dat. Místo této metody by však bylo možno využít plnohodnotného Pythonního modulu parsujícího XML formát.
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=81, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+	def save(self):
+		# Uložení dat do XML souboru
+		return "<highWhenPushed>" + str(self.highWhenPushed) + "</highWhenPushed>"
+
+	def simpleParser(self, xml, tag):
+		# Získání hodnoty elementu "tag" z XML dat
+		start = xml.find("<" + tag + ">")
+		end = xml.find("</" + tag + ">")
+		if start == -1 or end == -1:
+			return None
+		return xml[start + len(tag) + 2 : end]
+
+	def load(self, xml):
+		# Načtení hodnoty elementu "highWhenPushed"
+		c = self.simpleParser(xml, "highWhenPushed")
+		if c != None and c == "False":
+			self.highWhenPushed = False
+\end{lstlisting}
+
+\section{Rozšíření simulátoru o oscilátor v jazyce C++}
+\label{oscilator}
+
+Oscilátor je periferi, která svůj výstup mění pravidelně v určité frekvenci. Pokud periferie pracuje po celou dobu simulace, je vhodné ji kvůli vyššímu výkonu naprogramovat v jazyce C++.
+
+Podobně jako u periferie v jazyce Python je nutné i u oscilátoru definovat XML soubor "peripheral.xml" popisující nově vytvářenou periferii:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt}
+\begin{lstlisting}
+<peripheral type='binary'>
+   <name>Crystal oscillator</name>
+   <comment>Crystal oscillator</comment>
+   <author>Jan Kaluza</author>
+   <email>hanzz.k@gmail.com</email>
+   <version>0.1</version>
+   <license>GNU/GPL</license>
+   <library>oscillator</library>
+</peripheral>
+\end{lstlisting}
+
+Na rozdíl od periferie v jazyce Python je zde použit typ "binary" udávájící, že se jedná o binární modul reprezentovaný sdílenou knihovnou.
+
+\subsection{Tvorba modulu v jazyce C++}
+
+V jazyku C++ je kód modulu tvořen dvěma soubory - hlavičkovým souborem popisujícím rozhraní hlavní třídy modulu a souborem se samotnou její implementací.
+
+\subsubsection{Deklarace třídy modulu}
+
+Třída modulu deklaruje rozhraní modulu. Jednotlivé funkce budou podrobněji popsány v části zabývající se jejich implementací.
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=1, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+class Oscillator : public Peripheral {
+	public:
+		Oscillator();
+
+		// Metoda volána při interní změně
+		void internalTransition();
+
+		// Metoda volána při externí události
+		void externalEvent(double e, const SimulationEventList &);
+
+		// Metoda volána při generování výstupu
+		void output(SimulationEventList &output);
+
+		// Metoda plánující čas dálší akce
+		double timeAdvance();
+
+		// Reset oscilátoru
+		void reset();
+
+		// Vykreslení oscilátoru
+		void paint(QWidget *screen);
+
+		// Definice pinů oscilátoru
+		PinList &getPins() { return m_pins; }
+
+		// Definice konfiguračních voleb
+		const QStringList &getOptions();
+
+		// Spuštění konfiguráční volby
+		void executeOption(int option);
+
+		// Uložení a nahrání konfiguračních voleb
+		void save(QTextStream &stream);
+		void load(QDomElement &object, QString &error);
+
+	private:
+		PinList m_pins;
+		bool m_state;
+		unsigned long m_freq;
+		double m_step;
+		SimulationEventList m_output;
+		QStringList m_options;
+
+};
+\end{lstlisting}
+
+\subsubsection{Deklarace třídy vytvářející instance modulu}
+
+Aby bylo možné vytvořit více instancí modulu v rámci jednoho projektu, je potřeba definovat také třídu dědící z třídy PeripheralInterface. Účelem této třídy je vytvoření nové instance modulu metodou create().
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=45, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+class OscillatorInterface : public QObject, PeripheralInterface {
+	Q_OBJECT
+	Q_INTERFACES(PeripheralInterface)
+
+	public:
+		Peripheral *create();
+};
+\end{lstlisting}
+
+\subsubsection{Konstruktor třídy Oscillator}
+
+V rámci konstruktoru třídy Oscillator je potřeba nastavit jeho velikost pro vykreslování, definovat jeho piny, prvotní frekvenci a seznam konfiguračních voleb:
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+Oscillator::Oscillator() : m_state(false) {
+	resize(36, 24);
+
+	m_pins.push_back(Pin(QRect(24, 0, 10, 10), "XIN", 0));
+	m_pins.push_back(Pin(QRect(24, 12, 10, 10), "XOUT", 0));
+
+	m_freq = 7372800;
+	m_step = 1.0 / m_freq / 2;
+
+	m_options << "Set frequency";
+}
+\end{lstlisting}
+
+\subsubsection{Vykreslení oscilátoru }
+
+Vykreslení oscilátoru probíha v metodě paint(...). Tato metody vykreslí značku oscilátoru a oba jeho piny. Pokud je pin aktivní, má zelenou barvu.
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+void Oscillator::paint(QWidget *screen) {
+	QPainter qp(screen);
+	qp.drawRect(m_x, m_y, m_width - 12, m_height);
+	qp.drawLine(m_x + 3 + 9, m_y + 7, m_x + 3 + 9, m_y + 2);
+	qp.drawLine(m_x + 3, m_y + 7, m_x + 3 + 18, m_y + 7);
+	qp.drawRect(m_x + 3, m_y + 9, 18, 6);
+	qp.drawLine(m_x + 3, m_y + 17, m_x + 3 + 18, m_y + 17);
+	qp.drawLine(m_x + 3 + 9, m_y + 17, m_x + 3 + 9, m_y + 22);
+
+	for (PinList::iterator it = m_pins.begin(); it != m_pins.end(); it++) {
+		if (m_state) {
+			qp.fillRect(it->rect, QBrush(QColor(0,255,0)));
+		}
+		qp.drawRect(it->rect);
+	}
+}
+\end{lstlisting}
+
+\subsubsection{Implementace logiky oscilátoru}
+
+Oscilátor mění svůj výstup pravidelně v závislosti na nastavené frekvenci. Frekvence je uložena v proměnné "m\_freq". V proměnné "m\_step" je pak počítána délka jednoho stavu výstupu. Po startu simulace je nejprve zavolána metoda timeAdvance(...), která naplánuje následující akci oscilátoru (změnu jeho výstupu). Čas této akce je dán právě hodnotou proměnné "m\_step".
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+double Oscillator::timeAdvance() {
+	return m_step;
+}
+\end{lstlisting}
+
+Po uplynutí této časové doby je zavolána metoda internalTransition(...). Cílem této metody je změnit logickou hodnotu na pinech ocilátoru a uložit výstupní sekvenci do proměnné "m\_output":
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+void Oscillator::internalTransition() {
+	if (!m_state) {
+		m_state = true;
+		m_output.insert(SimulationEvent(0, 3.0));
+		m_output.insert(SimulationEvent(1, 3.0));
+	}
+	else {
+		m_state = false;
+		m_output.insert(SimulationEvent(0, 0.0));
+		m_output.insert(SimulationEvent(1, 0.0));
+	}
+}
+\end{lstlisting}
+
+V zápětí na to je zavolána metoda output(...), jejímž úkolem je vygenerování výstupu uloženého v proměnné "m\_output":
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+void Oscillator::output(SimulationEventList &output) {
+	if (!m_output.empty()) {
+		output.swap(m_output);
+	}
+}
+\end{lstlisting}
+
+Tento postup se stále opakuje, čímž implementuje funkci oscilátoru. Jelikož oscilátor nereaguje na externí události, je implementace metody externalEvent(...) prázdná.
+
+\subsubsection{Konfigurace oscilátoru}
+
+Oscilátor umožňuje změnu své frekvence prostřednictvím dialogu. Grafickému uživatelskému rozhraní jsou informace o podporovaných konfiguračních volbách předány metodou getOptions(...) vracející proměnnou "m\_options" inicializovanou v konstruktoru:
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+const QStringList &Oscillator::getOptions() {
+	return m_options;
+}
+\end{lstlisting}
+
+Pokud uživatel tuto volby vybere, je zavolána metoda executeOption(...) s parametrem definujícím index konfigurační volby. Na to reaguje osciloskop vyvoláním dialogu pro změnu frekvence:
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+void Oscillator::executeOption(int option) {
+	m_freq = QInputDialog::getInt(0, "Set frequency", "Frequency (Hz):", m_freq);
+	m_step = 1.0 / m_freq / 2;
+}
+\end{lstlisting}
+
+Frekvenci je rovněž potřeba uložit a načíst společne s projektem. To provádí metody save(...) a load(...):
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+void Oscillator::save(QTextStream &stream) {
+	ScreenObject::save(stream);
+	stream << "<frequency>";
+	stream << m_freq;
+	stream << "</frequency>\n";
+}
+
+void Oscillator::load(QDomElement &object, QString &error) {
+	m_freq = object.firstChildElement("frequency").text().toInt();
+	m_step = 1.0 / m_freq / 2;
+}
+\end{lstlisting}
+
+\subsubsection{Definice třídy OscillatorInterface}
+
+Jak již bylo zmíněno, tato třída slouží k vytvoření nové instance oscilátoru a umožňuje načtení modulu simulátorem:
+
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+Peripheral *OscillatorInterface::create() {
+	return new Oscillator();
+}
+
+Q_EXPORT_PLUGIN2(oscillatorperipheral, OscillatorInterface);
+\end{lstlisting}
+
+\section{Zhodnocení tvorby nových modulů}
+Z výše popsané tvorby modulu v jazyce Python lze vidět, že simulátor je jednoduše rozšířitelný. Jednoduché moduly v jazyce Python lze napsat do 100 řádků kódu obsahujících jak jejich logiku, tak metody pro vykreslování a ukládání rozšiřitelných dat. Díky vykreslování modulů pomocí Qt není vývojář jakkoliv omezen a může zvolit libovolný vzhled modulu a interaktivně ho měnit na základě interních či externích událostí.
+
+V případě požadavku na vyšší výkon (například pokud modul musí zpracovávat velké množství dat po celou dobu simulace) je možné využít jazyka C++. Moduly v tomto jazyce mají více možností a mohou využívat více částí API simulátoru, avšak jejich implementace může být časově náročnější. Nevýhodou je rovněž nutnost kompilovat modul pro cílový systém a tím jeho náročnější distribuce.
 
 
 \chapter{Závěr}
