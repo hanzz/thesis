@@ -1,37 +1,3 @@
-% 
-% Pekny den,
-% 
-% konecne jsem se dostal k precteni textu. Mam v soucasne dobe nasledujici
-% poznamky:
-% DONE 1) od druheho odstavce kap. 3 bych z toho udelal podkapitolu "UVOD"
-% DONE 2) po uvodu bych dal schema blokove a soucasny 4. odstavec trosku rozvedl
-% DONE 3) lepe formulovat vsechny instrukce jsou => Instrukce jsou kodovany
-% pomoci 16, 32 nebo 48 bitu pricemz operacni kod je situovan vzdy v
-% prvnich 16 bitech.
-% DONE 4) kap 3 lepe clenit - periferie dat do podkapitoly napr. Zakladni
-% periferie; at je z obsahu zrejme, ze se zabyvate IS, periferiemi, apod
-% DONE 5) kap 4  by  bylo vhodne prejmenovat, aby bylo zrejme, ze budete
-% popisovat obecne platnou zalezitost; nicmene pokud by mel rozsah zustat
-% spise maly, lepsi by bylo text pridat do kapitoly zabyvajici se
-% navrhem/implementaci ci jinam
-% DONE 6) kap 5 - vystizneji nazvat - napr. "Navrh udalostne rizeneho simulatoru"
-% DONE 7) Cílem této kapitoly je návrh simulátoru => Cílem této kapitoly je
-% popsat strukturu navrzeneho simulatoru
-% DONE 8) Pred kapitolu 5 bych dal kapitolu "Udalostne rizena simulace" a do ni
-% rozebral a) co to je a b) existujici systemy vcetne DEVS; v kapitole 5
-% se jen odkazat,ze to bude vyuzito
-% DONE 9) v ramci kap 5 bych asi nazyval komponentu msp430 simulacnim jadrem,
-% ale to je spise k diskusi
-% DONE 10) kap 5 by mela zacit "Struktura navrzeneho simulatoru", kde by se
-% zminilo jadro + rozsireni (podpora pro periferie) + nad tim GUI; teprve
-% pote se zabyvat popisem jednotlivych casti
-% DONE 11) zatim bych text v kap5 nechal byt a jakmile si budete myslet, ze je
-% kompletni, detailne bych jej procetl a napsal pripominky; nyni se mi
-% zda, ze tam je spoustu informaci, ale chtelo by je to trosku utribit
-%       chtelo by to napsat zminku, ktere mechanismy se budou z DEVS
-% pouzivat (nikoliv vsak uplne detaily - ty budou az v implementaci) -
-% napr. "Komponenty budou ke komunikaci vyuzivat ...."
-
 \chapter{Úvod}
 
 Mikrokontrolery (MCU) jsou monolitické integrované obvody obsahující mikroprocesor, paměť pro uložení programu, paměť pro jeho běh a další periferie
@@ -40,14 +6,11 @@ vestavěné (embedded) systémy.
 
 Při návrhu vestavěných systémů je v praxi často používána simulace. Díky využití simulátoru daného mikrokontroleru (případně celého vestavěného systému) lze ověřit funkčnost systému již při jeho návrhu aniž by bylo nutné vynaložit náklady na prvotní prototypy. Simulační čas lze zrychlit nebo naopak zpomalit a tím jednodušeji prozkoumat vybrané jevy. Simulace může rovněž zjednodušit hledání problémů viděných na reálném hardwaru, kdy jejich příčiny nelze prostým zkoumáním reálného systému jednoduše odhalit. Při použití simulace je také jednodušší vyzkoušet případné změny systému a zkoumat nové postupy bez dalšího zvýšení nákladů. Nejen z těchto důvodů je tedy simulace vestavěných systémů užitečná a má smysl se jí zabývat.
 
-Tato semestrální práce si dává za cíl návrh jednoduše rozšiřitelného pokročilého simulátoru mikrokontrolerů rodiny MSP430 od výrobce Texas Instruments. Tyto mikrokontrolery jsou hojně rozšířené především díky své nízké ceně, malé spotřebě a jednoduchosti práce s nimi. Lze je nalézt například i v platformě FITkit používané k výukovým účelům Fakultou informačních technologií Vysokého učení technického v Brně. Simulátor navrhovaný v této práci je navrhován právě jako doplňující prostředek pro vývoj aplikací pro tuto platformu, avšak bude moci být použit i samostatně. V současné době není obdobný software pod svobodnou licencí dostupný.
+Tato diplomová práce si dává za cíl návrh a implementaci jednoduše rozšiřitelného pokročilého simulátoru mikrokontrolerů rodiny MSP430 od výrobce Texas Instruments. Tyto mikrokontrolery jsou hojně rozšířené především díky své nízké ceně, malé spotřebě a jednoduchosti práce s nimi. Lze je nalézt například i v platformě FITkit používané k výukovým účelům Fakultou informačních technologií Vysokého učení technického v Brně. Simulátor implementovaný v této práci je navrhován právě jako doplňující prostředek pro vývoj aplikací pro tuto platformu, avšak bude moci být použit i samostatně. V současné době není obdobný software pod svobodnou licencí dostupný.
 
-Tento semestrální projekt je rozdělen do pěti kapitol.
+Tato diplomová práce je rozdělena do osmi kapitol.
 
-První kapitola obsahuje úvod. Dále následuje kapitola stručně popisující strukturu mikrokontroleru MSP430, jeho instrukční sadu, základní interní periferie a formáty používané pro uložení binárního kódu tohoto mikrokontroleru. Třetí kapitola se zabývá událostně řízenou simulací, konkrétně pak formalismem DEVS. Ve čtvrté kapitole je proveden samotný návrh simulátoru. Na závěr je navržený simulátor zhodnocen.
-
-% Mikrokontroler MSP430, kterého se táto práce týká, je postaven na von Neumannově architektuře (má tedy společnou paměť pro data i program). Paměť je adresována po bytech složených z 8 bitů a páry bytů tvoří 16bitové little-endian slova.
-
+První kapitola obsahuje úvod. Dále následuje kapitola stručně popisující strukturu mikrokontroleru MSP430, jeho instrukční sadu, základní interní periferie a formáty používané pro uložení binárního kódu tohoto mikrokontroleru. Třetí kapitola se zabývá událostně řízenou simulací, konkrétně pak formalismem DEVS. Ve čtvrté kapitole je proveden samotný návrh simulátoru. Popisem implementace tohoto návrhu se zabývá pátá kapitola. V šesté kapitole je implementovaný simulátor verifikován porovnáním s reálným mikrokontrolerem MSP430. Sedmá kapitola popisuje formou případové studie možnosti rozšíření simulátoru o nové periferie. Na závěr je implementovaný simulátor zhodnocen.
 
 \chapter{Mikrokontroler MSP430}
 
@@ -67,7 +30,7 @@ Jednotlivé bloky mikrokontroleru MSP430 jsou podrobněji popsány dále v této
 
 \section{Mikroprocesor a instrukční sada}
 
-Mikrokontrolery rodiny MSP430 obsahují 16bitový mikroprocesor (CPU) a 16 registrů, každý o kapacitě 16 bitů. První čtyři registry mají speciální účel. Registr R0 slouží jako ukazatel na aktuální instrukci (PC - program counter). Register R1 ukazuje na vrchol zásobníku (SP - stack pointer). Register R2 je stavovým registrem (SR - status register) obsahujícím informace o stavu mikroprocesoru. Register R3 je použit pro generování často používaných konstant, takže je není potřeba načítat z paměti. Ostatní registry je možné volně využít v uživatelském programu.
+Mikrokontrolery rodiny MSP430 obsahují 16bitový mikroprocesor (CPU) a 16 registrů, každý o kapacitě 16 bitů. První čtyři registry mají speciální účel. Registr R0 slouží jako ukazatel na aktuální instrukci (PC - program counter). Register R1 ukazuje na vrchol zásobníku (SP - stack pointer). Register R2 je stavovým registrem (SR - status register) obsahující informace o stavu mikroprocesoru. Register R3 je použit pro generování často používaných konstant, takže je není potřeba načítat z paměti. Ostatní registry je možné volně využít v uživatelském programu.
 
 Nejdůležitějšími stavovými bity ve stavovém registru jsou bity N (nastaven pokud je výsledek operace negativní), Z (nastaven pokud je výsledek operace nulový), C (nastaven pokud došlo k přenosu nejvyššího bitu) a V (nastaven pokud došlo při operaci k přetečení).
 
@@ -147,7 +110,7 @@ Mikrokontroler MSP430 pracuje se 7 adresovými módy pro zdrojový operand a 4 a
 
 Přerušení umožňují přerušit běh uživatelského programu při určité události. Po příchodu přerušení je vyvolána rutina obsluhující přerušení na základě její adresy ve vektoru přerušení. Po obsloužení přerušení mikroprocesor pokračuje dále ve vykonávaní uživatelského programu.
 
-Přerušení mají své pevně dané priority. Pokud dojde více žádostem o přerušení, je přednostně obsloužena žádost s vyšší prioritou.
+Přerušení mají své pevně dané priority. Pokud dojde k více žádostem o přerušení, je přednostně obsloužena žádost s vyšší prioritou.
 
 \section{Základní hodinový modul}
 
@@ -155,7 +118,7 @@ Jednou z dílčích částí mikrokontrolerů rodiny MSP430 je základní hodino
 
 \begin{itemize}
 \item \textbf{LFXT1CLK} - Nízko-frekvenční/vysoko-frekvenční oscilátor, který může být použit s externím krystalem, rezonátorem nebo vstupem externího hodinového signálu (typicky o frekcenci 32768 Hz).
-\item \textbf{XT2CLK} - Oscilátor, který může být použit s externím krystalem, rezonátorem nebo vstupem externího hodinového signálu o frekvencí 400 kHz až 16 Mhz.
+\item \textbf{XT2CLK} - Oscilátor, který může být použit s externím krystalem, rezonátorem nebo vstupem externího hodinového signálu o frekvenci 400 kHz až 16 Mhz.
 \item \textbf{DCOCLK} - Digitálně kontrolovaný oscilátor. Jeho frekvenci lze nastavit pomocí registrů (například u MSP430G2253 od 1 Mhz do 16 Mhz).
 \item \textbf{VLOCLK} - Interní nízkofrekvenční oscilátor s typickou frekcení 12 kHz.
 \end{itemize}
@@ -195,7 +158,7 @@ Hodnota časovače se mění v závislosti na zvoleném módu:
 \begin{itemize}
 \item \textbf{Up mode} - Časovač opakovaně počítá od nuly po hodnotu v registru TACCR0.
 \item \textbf{Continuous mode} - Časovač opakovaně počítá od nuly po hodnotu 0xffff.
-\item \textbf{Up/Down mode} - Časovač opakovaně počítá od nuly pod hodnotu v registru TACCR0 a pak zpět do nuly.
+\item \textbf{Up/Down mode} - Časovač opakovaně počítá od nuly po hodnotu v registru TACCR0 a pak zpět do nuly.
 \end{itemize}
 
 \subsubsection{Capture/Compare bloky}
@@ -212,7 +175,7 @@ Mikrokontrolery MSP430 obsahují v závislosti na modelu různé komunikační m
 
 \subsubsection{Protokol SPI}
 
-Protokol SPI (Serial Peripheral Interface) definuje komunikace mezi zařízeními propojenými třemi vodiči z nichž jedno ze zařízení je master a ostatní jsou slave. Jedná se o vodič SCLK přenášející hodinový signál určující frekvenci komunikace (generuje master), vodič SDO přenášející data ze zařízení a vodič SDI přenášející data do zařízení.
+Protokol SPI (Serial Peripheral Interface) definuje komunikaci mezi zařízeními propojenými třemi vodiči z nichž jedno ze zařízení je master a ostatní jsou slave. Jedná se o vodič SCLK přenášející hodinový signál určující frekvenci komunikace (generuje master), vodič SDO přenášející data ze zařízení a vodič SDI přenášející data do zařízení.
 
 Existuje i možnost komunikace pomocí 4 vodičů. Čtvrtým vodičem je v tomto případě vodič STE zajišťující vybrání konkrétního slave zařízení, které bude data spracovávat.
 
@@ -222,7 +185,7 @@ Samotná komunikace pak probíhá tak, že se s každým tikem hodin přenese po
 
 Komunikační modul USI (Universal Seria Interface) poskytuje synchronní sériovou komunikaci. Jeho základem je 8bitový nebo 16bitový posuvný registr, ze kterého jsou postupně vybírány výstupní bity a vstupní bity jsou do něj nahrávány. Modul USI podporuje přerušení, takže jeho běh nevyžaduje ze strany softwaru nadbytečné řízení.
 
-Lze zvolit mezi přenosem 8 bitu nebo 16 bitů a jejich orientací - MSB nebo LSB. Lze rovněž nastavit fázi a polaritu hodin generovaného signálu. Jako vstup hodinového signálu lze zvolit ACLK, SMCLK, SCLK (externí hodinový signál), výstupu z časovače nebo jej ovládat softwarově zápisem do registru.
+Lze zvolit mezi přenosem 8 nebo 16 bitů a jejich orientací - MSB nebo LSB. Lze rovněž nastavit fázi a polaritu hodin generovaného signálu. Jako vstup hodinového signálu lze zvolit ACLK, SMCLK, SCLK (externí hodinový signál), výstup z časovače nebo jej ovládat softwarově zápisem do registru.
 
 Tento komunikační modul je implementován ve starších modelech mikrokontroleru MSP430. V novějších jej nahradil modul USCI.
 
@@ -230,13 +193,13 @@ Tento komunikační modul je implementován ve starších modelech mikrokontrole
 
 Modul USCI (Universal Serial Communication Interface) podporuje více komunikačních protokolů (SPI, I2C, UART) v rámci jediného modulu. USCI modul je interně tvořen sadou podmodulů, které poskytují specifické komunikační protokoly.
 
-V případě protokolu SPI lze zvolit mezi přenosem sedmi nebo osmi bitů a lze určit jejich pořadí - MSB nebo LSB. Narozdíl od modulu USI podporuje modul USCI i komunikace pomocí 4 vodičů. Registry pro přijatá a odeslaná data jsou od sebe odděleny a ke každému z nich existuje buffer, čímž je umožněna nepřerušená komunikace.
+V případě protokolu SPI lze zvolit mezi přenosem sedmi nebo osmi bitů a lze určit jejich pořadí - MSB nebo LSB. Narozdíl od modulu USI podporuje modul USCI i komunikaci pomocí 4 vodičů. Registry pro přijatá a odeslaná data jsou od sebe odděleny a ke každému z nich existuje buffer, čímž je umožněna nepřerušená komunikace.
 
 Lze taktéž zvolit polaritu a fázi generovaného hodinového signálu a jako jeho vstup využít ACLK neb SMCLK.
 
 \subsubsection{Komunikační modul USART}
 
-Komunikační modul USART (Universal Synchronous/Asynchronous Receive/Transmit) podporuje 2 komunikační protokoly - SPI a UART. Z hlediska funkčnosti se jeho vlastnosti pro protokol SPI neliší od modulu USCI, liší se pouze vnitřní architekturou a řízením ze strany software.
+Komunikační modul USART (Universal Synchronous/Asynchronous Receive/Transmit) podporuje 2 komunikační protokoly - SPI a UART. Z hlediska funkčnosti se jeho vlastnosti pro protokol SPI neliší od modulu USCI, liší se pouze vnitřní architekturou a rozdílným řízením ze strany software.
 
 
 \section{Formáty uložení spustitelného kódu}
@@ -306,8 +269,9 @@ vzestupně podle simulačního času. Samotná simulace pak funguje tak, že sim
 
 \section{DEVS}
 
-DEVS (Discrete Event System Specification) je hierarchický a modulární formalismus pro návrh a modelování systémů s diskrétními událostmi.
-Základem DEVS je atomický model popisující chování části systému. Je definován jako sedmice:
+DEVS (Discrete Event System Specification) je hierarchický a modulární formalismus pro návrh a modelování systémů s diskrétními událostmi. Jeho autorem je profesor Bernard P. Zeigler, který jej poprvé publikoval ve své knize Theory of Modeling and Simulation.
+
+Základem formalismu DEVS je atomický model popisující chování části systému. Je definován jako sedmice:
 
 \begin{math}
 M=<X,Y,S,ta, \delta_{ext}, \delta_{int}, \lambda>
@@ -325,7 +289,7 @@ M=<X,Y,S,ta, \delta_{ext}, \delta_{int}, \lambda>
 
 Atomické modely tedy reagují na vstupní události změnou svého stavu a případně také generováním výstupní události. Svůj stav mohou měnit také samovolně po uplynutí doby setrvání v daném stavu.
 
-Atomické modely je možné dále hiearchicky sdružovat pomocí formalismu Spojovaného DEVS definovaného jako osmice:
+Atomické modely je možné dále hiearchicky sdružovat do spojovaných DEVS modelů definovaných jako osmice:
 
 \begin{math}
 N=<X,Y,D,\{M_i\},C_{xx}, C_{yx}, C_{yy}, Select>
@@ -342,6 +306,8 @@ N=<X,Y,D,\{M_i\},C_{xx}, C_{yx}, C_{yy}, Select>
 \item $Select:2^D \rightarrow D$ - množina funkcí určující jak vybrat událost z množiny událostí naplánovaných na stejný čas.
 \end{itemize}
 
+Podobně jako atomické modelu, mění i spojované modely stavy svých komponent v případě příchozí události nebo pokud jedna z podkomponent spustí svoji funkci změny stav $\delta_{int}$ a vygeneruje výstup. V obou případech jsou tyto události přeposlány ostatním komponentám definovaným v množiných propojení $C_{xx}$, $C_{yy}$ a $C_{yx}$.
+
 \chapter{Návrh událostně řízeného simulátoru}
 \label{navrh}
 
@@ -349,7 +315,7 @@ Cílem této kapitoly je popsat strukturu navrženého simulátoru, jeho rozhran
 
 \section{Struktura navrženého simulátoru}
 
-Simulátor bude rozdělen do čtyř navzájem se dopňujících částí - simulační jádro, knihovna simulující MCU MSP430, komponenty rozšiřující simulační jádro a grafické uživatelské rozhraní. Toto rozdělení lze vidět na obrázku \ref{fig:struktura}.
+Simulátor bude rozdělen do čtyř navzájem se doplňujících částí - simulační jádro, knihovna simulující MCU MSP430, komponenty rozšiřující simulační jádro a grafické uživatelské rozhraní. Toto rozdělení lze vidět na obrázku \ref{fig:struktura}.
 
 \begin{figure}[ht]
 \centering
@@ -374,7 +340,7 @@ Každá komponenta bude schopna následujícího chování:
 \item Generovat zprávy na výstupní port - $\lambda$ funkce z formalismu DEVS.
 \end{itemize}
 
-Mikrokontroler bude speciálním rozšířením běžné komponenty poskytujícím navíc přístup ke své paměti, regitrům a kódu programu. To umožní řídit simulaci na základě instrukcí a obsahu paměti a registrů daného mikrokontroléru. V rámci celé simulace bude jen jedna instance mikrokontroleru.
+Mikrokontroler bude speciálním rozšířením běžné komponenty poskytujícím navíc přístup ke své paměti, regitrům a kódu programu. To umožní řídit simulaci na základě instrukcí a obsahu paměti a registrů daného mikrokontroleru. V rámci celé simulace bude existovat jen jedna instance mikrokontroleru.
 
 Simulační jádro bude umět komponenty dynamicky načítat aniž by docházelo k jeho jakékoliv úpravě. Návrh je tak velmi obecný a umožní snadné přidávání dalších rozšiřujících komponent nebo i simulaci jiného mikrokontroleru.
 
@@ -436,7 +402,7 @@ Návrh registrů, podobně jako návrh paměti, počítá s možností čtení a
 
 \subsection{Přepínač pinů}
 
-Každá varianta mikrokontroleru obsahuje různé interní periferie a tím pádem i jiný počet pinů a jejich rozmístění na pouzdru mikrokontroleru. Na jeden pin může být zapojeno více interních periferií a to, která periferie právě daný pin obsluhuje, je určeno na pomocí řídících registrů (například PxSEL a PxSEL2).
+Každá varianta mikrokontroleru obsahuje různé interní periferie a tím pádem i jiný počet pinů a jejich rozmístění na pouzdru mikrokontroleru. Na jeden pin může být zapojeno více interních periferií a to, která periferie právě daný pin obsluhuje, je určeno za pomocí řídících registrů (například PxSEL a PxSEL2).
 
 Jednotlivé varianty mikrokontroleru MSP430 budou z hlediska pinů a jejich připojení na interní periferie popsány v XML souboru, který bude obsahovat o každém pinu následující informace:
 
@@ -465,11 +431,11 @@ Zdroje závislé na externích komponentách musí být schopny přijímat zprá
 
 Zdroje závislé na čase musí být samostatnými simulačními komponentami a musí samy na základě uběhnutého času generovat hodinový signál s patřičnou frekvencí.
 
-Všechny zdroje hodin musí generovat informace jak o náběžné, tak o sestupné hraně hodinového signálu. To je podstatná vlastnost například pro modul USI, který provádí své akce jak s oběma hranami hodinového signálu.
+Všechny zdroje hodin musí generovat informace jak o náběžné, tak o sestupné hraně hodinového signálu. To je podstatná vlastnost například pro modul USI, který provádí své akce s oběma hranami hodinového signálu.
 
 \subsection{Hodiny}
 
-Hodiny (MCLK, SMCLK a ACLK) dále zpracovávají hodinový signál od zdrojů hodinového signálu. Umožňují nastavit děličku, čímž mění frekcenci hodinového signálu. K jednotlivým hodinám budou připojeny interní periferie, které jimi budou řízeny. Stejně jako u zdrojů hodinového signálu je potřeba u zdrojů hodin poskytovat informace jak o náběžné tak o sestupné hraně.
+Hodiny (MCLK, SMCLK a ACLK) dále zpracovávají hodinový signál od zdrojů hodinového signálu. Umožňují nastavit děličku, čímž mění frekvenci hodinového signálu. K jednotlivým hodinám budou připojeny interní periferie, které jimi budou řízeny. Stejně jako u zdrojů hodinového signálu je potřeba u zdrojů hodin poskytovat informace jak o náběžné tak o sestupné hraně.
 
 \subsection{Správce přerušení}
 
@@ -497,7 +463,7 @@ Po vykonání instrukce je potřeba obsloužit jakákoliv přerušení, která m
 \subsection{Interní periferie}
 
 Interní periferie budou využívat modulů popsaných dříve v této kapitole. Každá interní periferie tak bude mít přístup k paměti, registrům, pinům, správci
-přerušení a hodinovému signálu. V rámci diplomové práce bude z interních periferií implementován časovač, modul USI a USCI.
+přerušení a hodinovému signálu. V rámci diplomové práce bude z interních periferií implementován časovač, modul a SPI komunikace za pomocí modulů USI, USCI a USART.
 
 Jako příklad návrhu interní periferie se tato podkapitola věnuje pouze časovači. Princip návrhu ostatních periferií je však obdobný, liší se pouze jejich funkcí.
 
@@ -512,7 +478,7 @@ Pomocí časovače lze rovněž generovat pulsy na výstupních pinech umístěn
 Je proto nutné umožnit časovači přístup k těmto pinům. To bude provedeno pomocí přepínače pinů. Časovač si zaregistruje potřebné názvy vstupů a výstupů
 a přepínač pinů pak v závislosti na akcích uživatelského programu bude směrovat vstupy mikrokontroleru přímo do časovače.
 
-Přerušení časovače jsou generována pomocí správce přerušení. Je však potřeba zajistit, aby se časovač dozvěděl o dokončení rutiny obsluhující přerušení
+Přerušení časovače budou generována pomocí správce přerušení. Je však potřeba zajistit, aby se časovač dozvěděl o dokončení rutiny obsluhující přerušení
 (přerušení časovače je sdíleno více zdroji přerušení a časovač musí být schopen požádat o další přerušení z jiného zdroje ihned po obsloužení původního přerušení). Toto je zajištěno monitorováním ukončených přerušení pomocí správce přerušení.
 
 Z příkladu časovače lze vidět, že návrh a dekompozice mikrokontroleru MSP430 je dostačující pro interní periferie a poskytuje všechny potřebné vlastnosti.
@@ -556,7 +522,7 @@ piny, které chce během simulace sledovat a během simulace (nebo i po jejím z
 
 \subsection{Správa projektu}
 
-Při vytvoření nového projektu bude uživatel dotázán na vybrání jeho architektury (návrh celé aplikace se neomezuje pouze na mikrokontrolery rodiny MSP430) a varianty dané architektury (v případě mikrokontroleru MSP430 se bude jednat o jeho konkrétní typ). Po vytvoření projektu uvidí uživatel na kreslící ploše vybraný mikrokotroler a bude mu umožněno nahrání programu a přidání dalších periferií.
+Při vytvoření nového projektu bude uživatel dotázán na vybrání jeho architektury (návrh celé aplikace se neomezuje pouze na mikrokontrolery rodiny MSP430) a varianty dané architektury (v případě mikrokontroleru MSP430 se bude jednat o jeho konkrétní typ). Po vytvoření projektu uvidí uživatel na kreslící ploše vybraný mikrokontroler a bude mu umožněno nahrání programu a přidání dalších periferií.
 
 Při uložení projektu bude potřeba uložit informace o všech komponentách, jejich propojení a umístení na kreslící ploše. Budou se rovněž ukládat informace
 o aktuálně používaných breakpointech a sledovaných pinech.
@@ -582,13 +548,13 @@ Další možností pozastavení simulace jsou takzvané breakpointy. Uživatel m
 
 \subsection{Ladění programu}
 
-Při každém pozastavení simulace uvidí uživatel aktuální instrukci ve zdrojovém kóu. Kromě samotného zdrojového kódu mu budou zobrazeny, pokud byl nahrán program ve formátu ELF s ladícími symboly, názvy všech zdrojových souborů nahraného programu a všech funkcí v daných souborech. Uživatel bude moci vybrat daný soubor a funkci v něm pro rychlejší orientaci v projektu. V případě dostupnosti zdrojového kódu v jazyce C se uživateli zobrazí jeho kód. Vždy však bude možné zobrazit diassemblovaný kód v assembleru. Uživatel bude moci přidávat breakpointy v libovolných místech kódu a po opětovném spuštění simulace se tato zastaví na místě, které uživatel zvolil.
+Při každém pozastavení simulace uvidí uživatel aktuální instrukci ve zdrojovém kódu. Kromě samotného zdrojového kódu mu budou zobrazeny, pokud byl nahrán program ve formátu ELF s ladícími symboly, názvy všech zdrojových souborů nahraného programu a všech funkcí v daných souborech. Uživatel bude moci vybrat daný soubor a funkci v něm pro rychlejší orientaci v projektu. V případě dostupnosti zdrojového kódu v jazyce C se uživateli zobrazí jeho kód. Vždy však bude možné zobrazit diassemblovaný kód v assembleru. Uživatel bude moci přidávat breakpointy v libovolných místech kódu a po opětovném spuštění simulace se tato zastaví na místě, které uživatel zvolil.
 
 V grafickém uživatelském rozhraní budou rovněž zobrazeny hodnoty registrů a důležitých adres v paměti (standardně hexadecimálně, avšak bude možné zobrazit jejich hodnoty i v jiných soustavách). Uživatel bude moci použít tento seznam registrů a míst v paměti pro rychlé přidání nových breakpointů. Na základě místa ve zdrojovém kódu, na kterém došlo k pozastavení simulace, budou zobrazeny jména a hodnoty lokálních proměnných.
 
 \subsection{Ladění signálů}
 
-Uživateli bude umožněno vybrání pinů na kreslící ploše a jejich zařazení do seznamu sledovaných pinů. V pruběhu simulace se změny napětí na sledovaných pinech budou ukládat a zobrazovat uživateli v graficky pomocí rozhraní podobného osciloskopu. Uživatel tak uvidí vztahy mezi jednotlivými signály generovanými na pinech v závislosti na čase. Standardně bude rozhraní ukazovat průběh celé simulace. Bude však možné určitý časový úsek přiblížit a získat tak detailnější pohled. Uživatelské rozhraní rovněž umožní export těchto dat.
+Uživateli bude umožněno vybrání pinů na kreslící ploše a jejich zařazení do seznamu sledovaných pinů. V pruběhu simulace se změny napětí na sledovaných pinech budou ukládat a zobrazovat uživateli v graficky pomocí rozhraní podobného osciloskopu. Uživatel tak uvidí vztahy mezi jednotlivými signály generovanými na pinech v závislosti na čase. Standardně bude rozhraní ukazovat průběh celé simulace. Bude však možné určitý časový úsek přiblížit a získat tak detailnější pohled.
 
 \chapter{Implementace}
 
@@ -617,7 +583,7 @@ Atomické modely formalismu DEVS jsou reprezentovány třídou adevs::Atomic. Ta
 
 Každá simulovaná komponenta tak musí být dceřinou třídou třídy adevs::Atomic. Při spuštění (nebo restartování simulace) se musí veškeré komponenty a jejich propojení vytvořit znovu, protože mohly být v grafickém uživatelském rozhraní přidány nové komponenty a změněny jejich dosavadní propojení.
 
-mTo představuje problém, protože, jak lze vidět na obrázku \ref{fig:adevs_classes}, komponenta není tvořena pouze simulační částí (tzv. třídou adevs::Atomic), ale i mnoha dalšími třídami, jejichž chování dědí (je například nutné komponenty vykreslovat v grafickém uživatelské rozhraní - dědit tomu odpovídající třídu). Není však optimální vytvářet objekty v grafickém uživatelském rozhraní znovu při každém restartování simulace.
+To představuje problém, protože, jak lze vidět na obrázku \ref{fig:adevs_classes}, komponenta není tvořena pouze simulační částí (tzv. třídou adevs::Atomic), ale i mnoha dalšími třídami, jejichž chování dědí (je například nutné komponenty vykreslovat v grafickém uživatelské rozhraní - dědit tomu odpovídající třídu). Není však optimální vytvářet objekty v grafickém uživatelském rozhraní znovu při každém restartování simulace.
 
 Tento problém byl vyřešen oddělením simulační části komponenty do samostatné třídy SimulationObjectWrapper dědící ze třídy adevs::Atomic a využívající návrhový vzor Proxy. Tato třída mapuje volání metod třídy adevs::Atomic na volání třídy SimulationObject, ze které pak všechny simulované komponenty dědí
 své chování. Tento vztah znázorňuje obrázek \ref{fig:adevs_classes}. Při restartování simulace tak nemusí být smazána a znovu vytvořena celá komponenta (třída SimulationObject), ale pouze třída SimulationObjectWrapper.
@@ -663,7 +629,7 @@ Ukázka kódu v jazyce Python implementující jednoduché periferie je rovněž
 
 \subsection{Rozšiřitelné MCU formou modulů}
 
-Jádro simulátoru rovněž umožňuje implementaci jiných 16 bitových mikrokontrolerů. Tyto mikrokontrolery mohou být načítány pouze jako sdílené knihovny naprogramované v jazyce C++. Mikrokontroler je reprezentován třídou MCU (rozšiřuje třídu Peripheral), která musí být děděna každým mikrokontrolerem.
+Jádro simulátoru umožňuje implementaci jiných 16 bitových mikrokontrolerů. Tyto mikrokontrolery mohou být načítány pouze jako sdílené knihovny naprogramované v jazyce C++. Mikrokontroler je reprezentován třídou MCU (rozšiřuje třídu Peripheral), která musí být děděna každým mikrokontrolerem.
 
 Třída MCU rozšiřuje třídu Peripheral zejména o možnost přístupu k paměti a registrům mikrokontroleru a přistupu k ladícím informacím pro aktuální program (viz podkapitola \ref{label_dwarf}).
 
@@ -675,7 +641,7 @@ Načítání modulů mikrokontrolerů funguje obdobně jako u periferií. Existu
 
 \subsection{Podpora breakpointů}
 
-Breakpointy umožňují zastavení simulace v případě splnění určíté, předem dané, podmínky. Byly implementovány dva typy breakpointů - zastavení simulace v případě změny hodnoty registru a zastavení simulace v případě změny hodnoty paměti na určité adrese.
+Breakpointy umožňují zastavení simulace v případě splnění určité, předem dané, podmínky. Byly implementovány dva typy breakpointů - zastavení simulace v případě změny hodnoty registru a zastavení simulace v případě změny hodnoty paměti na určité adrese.
 
 V obou případech slouží pro registraci breakpointů třída BreakpointManager. Tato třída využívá tříd RegisterWatcher a MemoryWatcher ke sledování registrů a paměti a v případě splnění podmínky breakpointu zastaví simulaci.
 
@@ -730,7 +696,7 @@ Knihovna simulující MCU MSP430 vykonává instrukce simulovaného programu a i
 
 Hlavní třídou knihovny je třída MCU\_MSP430, která reprezentuje celý mikrokontroler. V této třídě jsou vytvářeny a navzájem propojeny jednotlivé dílčí podtřídy, kterými se dále tato kapitola zabývá. Třída MCU\_MSP430 dědí ze třídy MCU a lze ji tak přímo použít jako rozšiřující modul simulátoru.
 
-Nejjednoduššími třídami simulátoru jsou třídy Memory, RegisterSet a Register. Třída Memory implementuje paměť jako pole bytů a umožňuje její čtení a zápis včetně informování o změně jednotlivých bytů pomocí instance třídy MemoryWatcher. Obdobně jsou implementovány třídy RegisterSet a Register.
+Nejjednoduššími třídami mikrokontroleru jsou třídy Memory, RegisterSet a Register. Třída Memory implementuje paměť jako pole bytů a umožňuje její čtení a zápis včetně informování o změně jednotlivých bytů pomocí instance třídy MemoryWatcher. Obdobně jsou implementovány třídy RegisterSet a Register.
 
 \subsection{Implementace jednotlivých variant MCU MSP430}
 
@@ -742,7 +708,7 @@ Vytváření těchto tříd ručně podle dokumentace by bylo značně obtížn�
 
 Tento seznam je pak dále zpracován a jsou z něj vybrány pouze ty definice, které jsou v knihovně simulující MCU MSP430 potřeba. Následně je vygenerována samotná třída Variant a i všechny její implementace - pro každý mikrokontroler jedna.
 
-Tímto postupem byla jednoduše vyřešena většina rozdílů mezi variantami mikrokotrolerů včetně detekce různých interních modulů poskytovaných různými variantami.
+Tímto postupem byla jednoduše vyřešena většina rozdílů mezi variantami mikrokontrolerů včetně detekce různých interních modulů poskytovaných různými variantami.
 
 \subsection{Načítání programu}
 
@@ -776,7 +742,7 @@ Mikrokontroler MSP430 na svém pouzdru obsahuje piny, ke kterým jsou uvnitř mi
 
 \subsubsection{Pouzdro mikrokontroleru}
 
-Pro uložení informace o pouzdru mikrokontroleru a možných pinech a jejich interních propojeních byl zvolen XML formát. Pro každou variantu mikrokontroleru je k dispozici XML soubor v následujícím formátu:
+Pro uložení informace o pouzdru mikrokontroleru a možných pinech a jejich interních propojeních byl zvolen XML formát. Pro každou podporovanou variantu mikrokontroleru je k dispozici XML soubor v následujícím formátu:
 \lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
@@ -832,7 +798,7 @@ Pro uložení informace o pouzdru mikrokontroleru a možných pinech a jejich in
 </variant>
 \end{lstlisting}
 
-Uvnitř elementu "<package>" se nachází definice pouzdra jedné varianty mikrokontroleru. Jednotlivé piny pouzdra jsou členěny podle strany pouzdra na které jsou umístěny: "left", "down", "right", "up". V těchto elementech se pak nachází samotné definice pinů. Každý pin má své id korespondující s číslováním pinu na pouzdru.
+Uvnitř elementu "package" se nachází definice pouzdra jedné varianty mikrokontroleru. Jednotlivé piny pouzdra jsou členěny podle strany pouzdra na které jsou umístěny: "left", "down", "right", "up". V těchto elementech se pak nachází samotné definice pinů. Každý pin má své id korespondující s číslováním pinu na pouzdru.
 
 Jelikož může být k jednomu pinu připojeno více interních periferíí, má pin více jmen (element "name"). Aktuální jméno (a tím pádem i aktuální interní periferie připojená k pinu) je dáno konfigurací řídících registrů daného pinu. Typicky se jedná o PxDIR, PxSEL a PxSEL2. Element "name" umožňuje definovat hodnoty bitů těchto registrů odpovídající danému pinu pomocí atributů "sel", "dir" a "sel2". Tyto informace jsou pak využívány při mapování pinů na interní periferie.
 
@@ -893,7 +859,7 @@ Poslední částí hodinového modulu je Časovač. Jedná se o interní perifer
 
 \subsection{Komunikační moduly}
 
-Komunikační moduly umožňují komunikaci mikrokontroleru s jinými zařízeními. Jak již bylo zmíněno, v rámci této diplomové práce byla implementována pouze komunikace v módu SPI, avšak byla implementována v rámci všech třech komunikačních modulů - USI, USCI a USART.
+Komunikační moduly umožňují komunikaci mikrokontroleru s jinými zařízeními. Jak již bylo zmíněno, v rámci této diplomové práce byla implementována pouze komunikace v módu SPI, avšak byla implementována v rámci všech tří komunikačních modulů - USI, USCI a USART.
 
 Jednotlivé moduly jsou velmi obsáhlé, ale princip jejich tvorby se nelišil od časovače. Každý modul je tvořen jednou třídou implementující třídy ClockHandler, MemoryWatcher, InterruptWatcher, PinHandler a SignalHandler. Za pomocí těchto tříd komunikuje modul s ostatními částmi knihovny a implementuje nad nimi své chování.
 
@@ -945,7 +911,7 @@ Lze také vytvořit propojení více než dvou objektů. V tomto případě je n
 
 \subsubsection{Přidání nové periferie na kreslící plochu}
 
-Pro přidání nové periferi na kreslící plochu slouží dialogové okno AddPeripheral (viz obrázek \ref{fig:addperipheral}) vyvolané pomocí kontextového menu kreslící plochy. Toto dialogové okno prostřednictvím instance třídy PeripheralManager získá seznam všech dostupných periferií a umožní uživateli jejich výběr. Tento dialog také zobrazuje náhled periferi za pomocí třídy ScreenObjectPreview. Tato třída vytváří novou dočasnou instanci periferie a vykreslí ji.
+Pro přidání nové periferi na kreslící plochu slouží dialogové okno AddPeripheral (viz obrázek \ref{fig:addperipheral}) vyvolané pomocí kontextového menu kreslící plochy. Toto dialogové okno prostřednictvím instance třídy PeripheralManager získá seznam všech dostupných periferií a umožní uživateli jejich výběr. Tento dialog také zobrazuje náhled periferie za pomocí třídy ScreenObjectPreview. Tato třída vytváří novou dočasnou instanci periferie a vykreslí ji.
 
 \begin{figure}[ht]
 \centering
@@ -957,7 +923,7 @@ Pro přidání nové periferi na kreslící plochu slouží dialogové okno AddP
 \subsection{Detaily periferií a mikrokontroleru}
 \label{detaily_per}
 
-Detaily jednotlivých periferií a mikrokotroleru lze vidět v levé části hlavního okna. Základem je třída Peripherals obsahující seznam všech položek jednotlivých periferií uložených a zobrazených pomocí Qt třídy QTreeWidget. Při přidání nebo odebrání nové periferie je zavolána její metoda getPeripheraLItem(...), která vrátí položku periferie (instanci třídy PeripheralItem) reprezentující tuto periferii v seznamu periferií.
+Detaily jednotlivých periferií a mikrokontroleru lze vidět v levé části hlavního okna. Základem je třída Peripherals obsahující seznam všech položek jednotlivých periferií uložených a zobrazených pomocí Qt třídy QTreeWidget. Při přidání nebo odebrání nové periferie je zavolána její metoda getPeripheralItem(...), která vrátí položku periferie (instanci třídy PeripheralItem) reprezentující tuto periferii v seznamu periferií.
 
 Každá periferie tak může implementovat vlastní implementaci třídy PeripheralItem, která je pak v detailech periferií zobrazena. Kromě obecné třídy PeripheralItem existují i další dvě třídy: MemoryItem a VariableItem.
 
@@ -968,7 +934,7 @@ Třída VariableItem pak slouží k zobrazení hodnoty lokálních proměnných 
 \subsection{Disassembler}
 \label{screen_disassembler}
 
-Disassembler slouží k zobrazení zdrojového kódu programu aktuálně zpracovávaného mikrokontrolerem. Hlavní třídou je třída Disassembler. Při pridání nového mikrokontrolu nebo změně jeho programu je znovu nahrán disassemblovaný kód a případné ladící informace. Zdrojový kód je zobrazen v Qt objektu typu QTreeWidget. V horní části disassembleru může uživatel vybrat zdrojový soubor programu a název funkce, kterou chce v tomto zdrojovém souboru zobrazit. Zobrazení zdrojového kódu lze přepínat mezi assemblerem a zdrojovým kódem v jazyce C.
+Disassembler slouží k zobrazení zdrojového kódu programu aktuálně zpracovávaného mikrokontrolerem. Hlavní třídou je třída Disassembler. Při pridání nového mikrokontroleru nebo změně jeho programu je znovu nahrán disassemblovaný kód a případné ladící informace. Zdrojový kód je zobrazen v Qt objektu typu QTreeWidget. V horní části disassembleru může uživatel vybrat zdrojový soubor programu a název funkce, kterou chce v tomto zdrojovém souboru zobrazit. Zobrazení zdrojového kódu lze přepínat mezi assemblerem a zdrojovým kódem v jazyce C.
 
 Po přerušení simulace (nebo například krokování programu) je na základě hodnoty PC registru metodou pointToInstruction(...) zobrazena aktuální instrukce. Uživatel rovněž může pomocí kontextového menu přidávat nové breakpointy. Adresy instrukcí, na kterých je nastaven breakpoint jsou zobrazeny červenou barvou.
 
@@ -1032,24 +998,98 @@ Kořenovým elementem je element "qsimkit\_project". Jeho vnitřní elementy pak
 \begin{itemize}
 \item \textbf{objects} - Uchovává seznam všech objektů vytvořených v rámci projektu.
 \begin{itemize}
-\item \textbf{object} - Každý objekt má sváj typ, jméno a pozici. Každý objekt může kromě těchto základních informací ukládat i informace pro něj specifické. Například objekt s rozhraním typu "mcu" reprezentuje mikrokontroler a jako rozšiřující informace ukládá kód aktuálního programu a cestu k jeho zdroji.
+\item \textbf{object} - Každý objekt má svůj typ, jméno a pozici. Každý objekt může kromě těchto základních informací ukládat i informace pro něj specifické. Například objekt s rozhraním typu "mcu" reprezentuje mikrokontroler a jako rozšiřující informace ukládá kód aktuálního programu a cestu k jeho zdroji.
 \end{itemize}
-\item \textbf{connections} - Reprezentuje propojení mezi objekty. O každém propojení jsou známy jeho uzlové body na kreslící ploše a objekty s jejich piny, které propojení spojuje.
+\item \textbf{connections} - Ukládá propojení mezi objekty. O každém propojení jsou známy jeho uzlové body na kreslící ploše a objekty s jejich piny, které propojení spojuje.
 \item \textbf{trackedpins} - Slouží pro uložení seznamu sledovaných pinů.
 \item \textbf{registerbreakpoints} - Uchovává seznam všech bodů zastavení pro registry. 
-\item \textbf{memorybreakpoints} - Analogicky v registerbreakpoints uchovává seznam všech bodů zastavení pro paměťové buňky.
+\item \textbf{memorybreakpoints} - Analogicky k registerbreakpoints uchovává seznam všech bodů zastavení pro paměťové buňky.
 \end{itemize}
 
 
 \subsubsection{Uložení a nahrání projektu}
 
-Uložení je iniciováno ze třídy QSimKit, která umožní uživateli výběr místa pro uložení projektu, vytvoří QSP soubor a k němu odpovídající instanci třídy QTextStream. Ukládání dat do tohoto souboru pak provádí další třídy simulátoru. Třída Screen ve své metodě save(...) projde seznam všech svých objektů, uloží do souboru jejich základní informace a pro informace rozšířené zavolá metodu save(...) každého objektu. V této metodě pak mají jednotlivé objekty možnost uložit pro ně specifické informace.
+Uložení je iniciováno ze třídy QSimKit, která umožní uživateli výběr souboru pro uložení projektu, vytvoří QSP soubor a k němu odpovídající instanci třídy QTextStream. Ukládání dat do tohoto souboru pak provádí další třídy simulátoru. Třída Screen ve své metodě save(...) projde seznam všech svých objektů, uloží do souboru jejich základní informace a pro informace rozšiřující zavolá metodu save(...) každého objektu. V této metodě pak mají jednotlivé objekty možnost uložit pro ně specifické informace.
 
 Obdobně je volána metoda save(...) třídy ConnectionManager ukládající informace o spojeních mezi objekty.
 
 Nahrávání projektu probíhá analogicky s tím rozdílem, že jsou volány metody load(...) jednotlivých tříd, které z instance třídy QDomDocument získají potřebná data.
 
 \section{Implementované rozšiřující moduly}
+
+V rámci diplomové práce bylo implementováno celkem pět rozšiřujících modulů. V této podkapitole jsou jednotlivé moduly stručně popsány. Jedná se o moduly implementující tlačítko, LED diodu, LCD displej, oscilátor a SD kartu.
+
+Moduly tlačítka a oscilátoru jsou rozebrány podrobněji také v případové studii v rámci kapitoly \ref{pripad}.
+
+\subsection{Tlačítko}
+
+Modul tlačitka (viz obrázek \ref{fig:tlacitko}) implementuje jednoduché tlačítko v jazyce Python. Po kliknutí na něj změní tlačítko svůj stav a vygeneruje odpovídající napětí na svůj výstupní pin. Uživateli je umožněno vybrat, bude-li tlačítko generovat v sepnutém stavu logickou 1 nebo 0.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/button}
+\caption{Nesepnutý a sepnutý stav tlačítka.}
+\label{fig:tlacitko}
+\end{figure}
+
+\subsection{LED dioda}
+
+Modul LED diody (lze vidět na obrázku \ref{fig:dioda}) je rovněž implementován v jazyce Python. Jeho funkcí je při logické 1 na vstupu zobrazit rozsvícenou LED diodu. Uživatel může vybrat barvu diody pomocí jejího kontextového menu.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/led}
+\caption{Nesvítící a svítící LED dioda.}
+\label{fig:dioda}
+\end{figure}
+
+\subsection{LCD displej}
+
+Modul LCD displeje (viz obrázek \ref{fig:lcd}) implementuje v jazyce Python LCD displej postavený na integrovaném obvodu HD44708. Nejedná se o kompletní implementaci tohoto integrovaného obvodu. Pro účely testování simulátoru byly implementovány pouze následující vlastnosti obvodu HD44708:
+
+\begin{itemize}
+\item Pouze 1 řádek, 16 alfanumerických znaků.
+\item Řízení pomocí 4 nebo 8 vodičů.
+\item Smazání displeje.
+\item Přesunutí kurzoru na začátek.
+\item Nastavení inkrementace (dekrementace) pozice kurzoru při nahrání znaku.
+\end{itemize}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/lcd}
+\caption{LCD displej zobrazující testovací text nahraný pomocí mikrokontroleru.}
+\label{fig:lcd}
+\end{figure}
+
+\subsection{SD karta}
+
+Modul SD karty (viz obrázek \ref{fig:sd}) vznikl zejména za účelem testování komunikačních modulů komunikujících pomocí SPI. Podobně jako modul LCD displeje je i modul SD karty naprogramován v jazyce Python a neimplementuje kompletní standard definující komunikační rozhraní SD karty. Implementace modulu je v rámci diplomové práce omezena na následující vlastnosti:
+
+\begin{itemize}
+\item Velikost SD karty pouze 2MB.
+\item Čtení CSD dat SD karty - tato data popisují vlastnosti SD karty (například její velikost).
+\item Možnost nastavit délku bloku čtených/zapisovaných dat.
+\item Čtení a zápis dat na libovolnou adresu SD karty včetně blokového zápisu a čtení.
+\end{itemize}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/sd}
+\caption{Modul SD karty.}
+\label{fig:sd}
+\end{figure}
+
+\subsection{Oscilátor}
+
+Modul oscilátoru (viz obrázek \ref{fig:oscilator}) slouží ke generování periodického signálu. Uživatel může pomocí kontextového menu vybrat frekvenci tohoto signálu. Jako jediný z modulů je tento modul implementován v jazyce C++. Tento jazyk byl zvolen zejména kvůli nutnosti vyššího výkonu, protože oscilátor generuje nové události velmi často.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.8]{fig/oscilator}
+\caption{Modul oscilátoru a ukázka signálu, který generuje.}
+\label{fig:oscilator}
+\end{figure}
 
 \chapter{Verifikace}
 
@@ -1093,7 +1133,7 @@ Na obrázku \ref{fig:dso04sim} lze vidět výstup stejného programu běžícíh
 
 \begin{figure}[ht]
 \centering
-\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/dso04sim}
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.8]{fig/dso04sim}
 \caption{Naměřené hodnoty v simulátoru.}
 \label{fig:dso04sim}
 \end{figure}
@@ -1133,7 +1173,7 @@ Osciloskop byl připojen pouze k pinu P1.7. Výsledek měření lze vidět na ob
 
 \begin{figure}[ht]
 \centering
-\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/dso05}
+\includegraphics[trim=0cm 0cm 0cm 0cm]{fig/dso05}
 \caption{Naměřené hodnoty osciloskopem na reálném mikrokontroleru.}
 \label{fig:dso05osc}
 \end{figure}
@@ -1142,7 +1182,7 @@ Doba setrvání pinu P1.7 v jednom stavu byla 62.5 ms. Výsledky stejného progr
 
 \begin{figure}[ht]
 \centering
-\includegraphics[trim=0cm 0cm 0cm 0cm, scale=1]{fig/dso05}
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.8]{fig/dso05sim}
 \caption{Naměřené hodnoty v simulátoru.}
 \label{fig:dso05sim}
 \end{figure}
@@ -1151,7 +1191,7 @@ Z porovnání výsledků opět vyplývá, že simulovaný program odpovídá pro
 
 \section{Verifikace časovače}
 
-Cílem tohoto testu je ověřit správnou funkci časovače za použití jednoduchého programu invertujícího periodicky výstupní pin P1.7. Program nastaví časovač na vyvolání přerušení při napočítání do 1260. Po pěti přerušeních je invertován pin P1.7.
+Cílem tohoto testu bylo ověřit správnou funkci časovače za použití jednoduchého programu invertujícího periodicky výstupní pin P1.7. Program nastaví časovač na vyvolání přerušení při napočítání do 1260. Po pěti přerušeních je invertován pin P1.7.
 
 Celý kód programu vypadal takto:
 
@@ -1175,20 +1215,37 @@ int main(void) {
 	CCR0 = 1260;
 	CCTL0 = CCIE;
 	TACTL |= MC_1;
-
-	P1DIR |= BIT7 | BIT4;
-	P1SEL |= BIT4;
-	P1OUT |= BIT7;
+	P1DIR |= BIT7;
 
 	__enable_interrupt();
-	int dummy = 1;
-	while(1) dummy++;
+	while(1) {}
 	return 0;
 }
 
 \end{lstlisting}
 
+Osciloskop byl připojen pouze k pinu P1.7. Výsledek měření lze vidět na obrázku \ref{fig:dso06osc}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm]{fig/dso06}
+\caption{Naměřené hodnoty osciloskopem na reálném mikrokontroleru.}
+\label{fig:dso06osc}
+\end{figure}
+
+Doba setrvání pinu P1.7 v jednom stavu byla 4.18 ms. Výsledky stejného programu simulovaného v simulátoru lze vidět na obrázku \ref{fig:dso06sim}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.8]{fig/dso06sim}
+\caption{Naměřené hodnoty v simulátoru.}
+\label{fig:dso06sim}
+\end{figure}
+
+V simulátoru byla naměřena hodnota 4.16 ms. Časování simulovaného programu tak odpovídá reálnému mikrokontroleru.
+
 \chapter{Případová studie - tvorba rozšiřujících modulů}
+\label{pripad}
 
 Cílem této kapitoly je popsat a názorně ukázat modulárnost implementovaného simulátoru prostřednictvím tvorby dvou nových periferií - tlačítka a oscilátoru. Pro názornost bude tlačítko naprogramováno v jazyce Python a oscilátor v jazyce C++. Tato kapitola rovněž prakticky popisuje rozhraní pro tvorbu nových modulů pro oba tyto jazyky.
 
@@ -1378,7 +1435,7 @@ K vykreslení periferie slouží metoda paint(...):
 			p.drawRect(rect)
 \end{lstlisting}
 
-Tato metoda využíva vykreslování pomocí knihovny Qt, konkrétně její třída QPainter. Vykreslování probíha na objekt self.screen reprezentující kreslící plochu GUI. Programátor tak má velkou svobodu v ovlivnění vzhledu periferie.
+Tato metoda využíva vykreslování pomocí knihovny Qt, konkrétně její třídy QPainter. Vykreslování probíha na objekt self.screen reprezentující kreslící plochu GUI. Programátor tak má velkou svobodu v ovlivnění vzhledu periferie.
 
 \subsubsection{Implementace logiky tlačítka}
 
@@ -1600,7 +1657,7 @@ Pokud by tlačítko přijímalo na svém pinu vstupní události, byly by tlač�
 
 \subsubsection{Konfigurování tlačítka}
 
-Tlačítko disponuje jedinou konfigurační volbou - lze u něj nastavit, bude-li po sepnutí ve stavu logické 1 nebo 0. Toto nastavení je potřeba ukládat a načítat společne s projektem. K tomuto účelu slouží metody save(...) a load(...). pro jednodušší přidávání nových voleb je implementována rovněž metoda simpleParser(...) umožňující jednoduché parsování XML dat. Místo této metody by však bylo možno využít plnohodnotného Pythonního modulu parsujícího XML formát.
+Tlačítko disponuje jedinou konfigurační volbou - lze u něj nastavit, bude-li po sepnutí ve stavu logické 1 nebo 0. Toto nastavení je potřeba ukládat a načítat společne s projektem. K tomuto účelu slouží metody save(...) a load(...). Pro jednodušší přidávání nových voleb je implementována rovněž metoda simpleParser(...) umožňující jednoduché parsování XML dat. Místo této metody by však bylo možno využít plnohodnotného Pythonního modulu parsujícího XML formát.
 \lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=81, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
@@ -1655,7 +1712,7 @@ Tlačítko disponuje jedinou konfigurační volbou - lze u něj nastavit, bude-l
 \section{Rozšíření simulátoru o oscilátor v jazyce C++}
 \label{oscilator}
 
-Oscilátor je periferi, která svůj výstup mění pravidelně v určité frekvenci. Pokud periferie pracuje po celou dobu simulace, je vhodné ji kvůli vyššímu výkonu naprogramovat v jazyce C++.
+Oscilátor je periferie, která svůj výstup mění pravidelně v určité frekvenci. Pokud periferie pracuje po celou dobu simulace, je vhodné ji kvůli vyššímu výkonu naprogramovat v jazyce C++.
 
 Podobně jako u periferie v jazyce Python je nutné i u oscilátoru definovat XML soubor "peripheral.xml" popisující nově vytvářenou periferii:
 
@@ -1858,7 +1915,7 @@ Oscillator::Oscillator() : m_state(false) {
 
 Vykreslení oscilátoru probíha v metodě paint(...). Tato metody vykreslí značku oscilátoru a oba jeho piny. Pokud je pin aktivní, má zelenou barvu.
 
-\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=21, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
     {ď}{{\v{d}}}1
@@ -1912,7 +1969,7 @@ void Oscillator::paint(QWidget *screen) {
 
 Oscilátor mění svůj výstup pravidelně v závislosti na nastavené frekvenci. Frekvence je uložena v proměnné "m\_freq". V proměnné "m\_step" je pak počítána délka jednoho stavu výstupu. Po startu simulace je nejprve zavolána metoda timeAdvance(...), která naplánuje následující akci oscilátoru (změnu jeho výstupu). Čas této akce je dán právě hodnotou proměnné "m\_step".
 
-\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=37, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
     {ď}{{\v{d}}}1
@@ -1951,7 +2008,7 @@ double Oscillator::timeAdvance() {
 
 Po uplynutí této časové doby je zavolána metoda internalTransition(...). Cílem této metody je změnit logickou hodnotu na pinech ocilátoru a uložit výstupní sekvenci do proměnné "m\_output":
 
-\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=40, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
     {ď}{{\v{d}}}1
@@ -1999,7 +2056,7 @@ void Oscillator::internalTransition() {
 
 V zápětí na to je zavolána metoda output(...), jejímž úkolem je vygenerování výstupu uloženého v proměnné "m\_output":
 
-\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=52, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
     {ď}{{\v{d}}}1
@@ -2044,7 +2101,7 @@ Tento postup se stále opakuje, čímž implementuje funkci oscilátoru. Jeliko�
 
 Oscilátor umožňuje změnu své frekvence prostřednictvím dialogu. Grafickému uživatelskému rozhraní jsou informace o podporovaných konfiguračních volbách předány metodou getOptions(...) vracející proměnnou "m\_options" inicializovanou v konstruktoru:
 
-\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=57, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
     {ď}{{\v{d}}}1
@@ -2083,7 +2140,7 @@ const QStringList &Oscillator::getOptions() {
 
 Pokud uživatel tuto volby vybere, je zavolána metoda executeOption(...) s parametrem definujícím index konfigurační volby. Na to reaguje osciloskop vyvoláním dialogu pro změnu frekvence:
 
-\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=60, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
     {ď}{{\v{d}}}1
@@ -2123,7 +2180,7 @@ void Oscillator::executeOption(int option) {
 
 Frekvenci je rovněž potřeba uložit a načíst společne s projektem. To provádí metody save(...) a load(...):
 
-\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=64, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
     {ď}{{\v{d}}}1
@@ -2172,7 +2229,7 @@ void Oscillator::load(QDomElement &object, QString &error) {
 
 Jak již bylo zmíněno, tato třída slouží k vytvoření nové instance oscilátoru a umožňuje načtení modulu simulátorem:
 
-\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=10, literate=%
+\lstset{language=Python, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, firstnumber=75, literate=%
     {á}{{\'a}}1
     {č}{{\v{c}}}1
     {ď}{{\v{d}}}1
@@ -2219,9 +2276,14 @@ V případě požadavku na vyšší výkon (například pokud modul musí zpraco
 
 \chapter{Závěr}
 
-Cílem této práce bylo seznámení s mikrokontrolery MSP430 a návrh simulátoru těchto mikrokontrolerů s podporou rozšiřitelných periferií. Díky využití formalismu Spojovaného DEVS jako základu pro simulátor je rozšiřování o externí periferie jednoduché, protože tento formalismus poskytuje jednotné rozhraní pro všechny komponenty simulace. Simulátor je navíc navržen tak, že je v budoucnu možné simulovat i jiné mikrokontrolery než MSP430. Díky oddělení simulačního jádra od grafického uživatelského rozhraní je rovněž možné zakomponovat simulaci i do jiných projektů, vytvořit nové uživatelské rozhraní nebo případně provádět simulace automaticky bez jakéhokoliv grafického rozhraní. Toho lze v praxi využít například pro tvorbu automatických testů při návrhu softwaru pro vestavěný systém.
+Cílem této práce bylo seznámení s mikrokontrolery MSP430, návrh simulátoru těchto mikrokontrolerů s podporou rozšiřitelných periferií a jeho implementace. Díky využití formalismu Spojovaného DEVS jako základu pro simulátor je rozšiřování o externí periferie jednoduché, protože tento formalismus poskytuje jednotné rozhraní pro všechny komponenty simulace.
 
-V dalším vývoji bude simulátor implementován a bude otestována jeho přesnost vůči reálnému mikrokontroleru MSP430. Budou také implementovány základní periferie jako je například LED dioda nebo tlačítko a postup tvorby těchto periferií bude popsán v diplomové práci jako případová studie.
+Simulátor je navíc navržen tak, že je v budoucnu možné simulovat i jiné mikrokontrolery než MSP430. Díky oddělení simulačního jádra od grafického uživatelského rozhraní je rovněž možné zakomponovat simulaci i do jiných projektů, vytvořit nové uživatelské rozhraní nebo případně provádět simulace automaticky bez jakéhokoliv grafického rozhraní. Toho lze v praxi využít například pro tvorbu automatických testů při návrhu softwaru pro vestavěný systém.
+
+Pro implementaci simulátoru byl využit jazyk C++ společně s frameworkem Qt, čímž je zjednodušena případná budoucí distribuce simulátoru společně se softwarem QDevKit a výsledný simulátor je jednoduše přenositelný. Verifikací simulátoru oproti reálnému mikrokontroleru MSP430 byla zjištěna dostačující přenost simulace.
+
+Simulátor je možné rozšiřovat za pomocí externích modulů implementovaných v jazyce C++ nebo Python. V rámci diplomové práce bylo implementováno několik rozšiřujících modulů jako je například LCD displej nebo SD karta. Postup tvorby těchto modulů byl popsán v případové studii obsažené v této diplomové práci.
+
 
 
 
