@@ -2276,15 +2276,23 @@ V případě požadavku na vyšší výkon (například pokud modul musí zpraco
 
 \chapter{Závěr}
 
-Cílem této práce bylo seznámení s mikrokontrolery MSP430, návrh simulátoru těchto mikrokontrolerů s podporou rozšiřitelných periferií a jeho implementace. Díky využití formalismu Spojovaného DEVS jako základu pro simulátor je rozšiřování o externí periferie jednoduché, protože tento formalismus poskytuje jednotné rozhraní pro všechny komponenty simulace.
+Cílem této práce bylo seznámení s mikrokontrolery MSP430, návrh simulátoru těchto mikrokontrolerů s podporou rozšiřitelných periferií a jeho implementace. Díky využití formalismu spojovaného DEVS jako základu pro simulátor je rozšiřování o externí periferie jednoduché, protože tento formalismus poskytuje jednotné rozhraní pro všechny komponenty simulace.
 
 Simulátor je navíc navržen tak, že je v budoucnu možné simulovat i jiné mikrokontrolery než MSP430. Díky oddělení simulačního jádra od grafického uživatelského rozhraní je rovněž možné zakomponovat simulaci i do jiných projektů, vytvořit nové uživatelské rozhraní nebo případně provádět simulace automaticky bez jakéhokoliv grafického rozhraní. Toho lze v praxi využít například pro tvorbu automatických testů při návrhu softwaru pro vestavěný systém.
 
-Pro implementaci simulátoru byl využit jazyk C++ společně s frameworkem Qt, čímž je zjednodušena případná budoucí distribuce simulátoru společně se softwarem QDevKit a výsledný simulátor je jednoduše přenositelný. Verifikací simulátoru oproti reálnému mikrokontroleru MSP430 byla zjištěna dostačující přenost simulace.
+Pro implementaci simulátoru byl využit jazyk C++ společně s frameworkem Qt, čímž je zjednodušena případná budoucí distribuce simulátoru společně se softwarem QDevKit a výsledný simulátor je jednoduše přenositelný a spravovatelný. Díky využití automatických jednotkových testů testujících implementaci knihovny simulující mikrokontroler MSP430 je implementace mikrokontroleru MSP430 dobře otestována. Verifikací simulátoru oproti reálnému mikrokontroleru MSP430 byla zjištěna dostačující přesnost simulace.
 
-Simulátor je možné rozšiřovat za pomocí externích modulů implementovaných v jazyce C++ nebo Python. V rámci diplomové práce bylo implementováno několik rozšiřujících modulů jako je například LCD displej nebo SD karta. Postup tvorby těchto modulů byl popsán v případové studii obsažené v této diplomové práci.
+Simulátor je možné rozšiřovat za pomocí externích modulů implementovaných v jazyce C++ nebo Python. V rámci diplomové práce bylo implementováno několik rozšiřujících modulů jako je například LCD displej nebo SD karta. Postup tvorby těchto modulů byl popsán v případové studii obsažené v této diplomové práci, která rovněž dokládá funkčnost a dostatečnou modulárnost implementace.
 
+Výsledný simulátor byl zveřejněn pod licencí GPLv2+ a byla pro něj vytvořena jednoduchá webová prezentace se základními informacemi na adrese <http://qsimkit.org/>. Na této adrese lze rovněž stáhnout testovací instalátor aplikace pro systém Windows.
 
+Vzhledem k architektuře simulátoru se nabízí hned několik možných směrů jejího budoucího vylepšování.
+
+V prvé řadě se jedná o přidání nových periferií, kdy by bylo v konečném důsledku možné kompletně simulovat platformu FITKit. Další možností budoucího rozšíření může být implementace jiných mikrokontrolerů jako je například mikrokontroler PIC, čímž by se rozšířil rámec potencionálních uživatelů. Výhodou zůstává, že veškeré periferie by mohly být využiti jak mikrokontrolery rodiny MSP430, tak nově implementovanými mikrokontrolery rodiny PIC.
+
+Zajímavým rozšířením může rovněž být zakomponování simulačního jádra do vývojového prostředí Eclipse. Programátor by mohl přímo editovat a ladit kód pro daný vestavěný systém aniž by ho musel mít fyzicky přístupný a aniž by musel měnit své programovací návyky. Na to se úzce váže rozšíření simulátoru o podporu komunikačního protokolu debuggeru GDB pro vzdálené ladění aplikaci.
+
+V neposlední řadě by zajímavým rozšířením byla implementace testovacího frameworku pro vestavěné systémy postaveného nad implementovaným simulátorem. Tento testovací framework by umožnil automatické testování softwaru pro daný vestavěný systém podobně jako knihovna CPPUnit testuje čistě softwarové projekty.
 
 
 
