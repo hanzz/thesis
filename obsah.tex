@@ -261,17 +261,114 @@ Událostně řízená simulace modeluje simulovaný systém jako sled diskrétn�
 stav systému. Mezi jednotlivými událostmi se stav systému nemění a je tak možné zpracovávat po sobě jdoucí události bez ohledu na časový interval
 mezi nimi.
 
-Každá událostně řízená simulace má svůj globální stav. Ten zahrnuje všechny proměnné a atributy studovaného systému. Globální stav se může v průběhu
-simulace měnit vykonáváním událostí. Simulace také udržuje aktuální hodnotu simulačního času pro správné plánování událostí.
+Kromě událostně řízené simulace existuje také simulace spojitá. Tento typ simulace probíhá tak, že je simulační čas rozdělen na malé časové intervaly, ve kterých se pak počítá celkový stav systému. Oproti událostně řízené simulaci je spojitá simulace mnohonásobně pomalejší než ekvivalentní událostně řízená simulace.
 
-Další důležitou částí událostně řízené simulace je seznam událostí. V seznamu jsou události, které ještě nebyly zpracovány. Události jsou seřazeny
-vzestupně podle simulačního času. Samotná simulace pak funguje tak, že simulátor změní simulační čas na hodnotu první naplánované události ze seznamu událostí. Tuto událost vykoná a pokračuje další naplánovanou událostí. Každá událost může při svém vykonávání přidávat do seznamu událostí další položky. Simulace končí při dosažení ukončující podmínky (například omezení simulačním časem nebo ukončení simulace při prázdném seznamu událostí).
+\subsubsection{Příklad událostně řízené simulace}
+
+Další podkapitoly v této kapitole se budou odkazovat na následující typický příklad událostně řízené simulace - Frontu v obchodním domě (viz obrázek \ref{fig:bank}).
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm]{fig/bank}
+\caption{Ilustrace modelového příklady fronty v obchodním domě.}
+\label{fig:bank}
+\end{figure}
+
+Zákaznící mohou přicházet do obchodu a jsou obslouženi pokladní v pořadí, v jakém k pokladně přisli. Čas potřebný k odbavení zákazníka je závislý na počtu položek v jeho nákupním koši (Takže je pro každého zákazníka rozdílný).
+
+První entitou takovéto simulace je Zákazník. O každém zákazníkovi potřebujeme vědět dobu, za jakou ho pokladník odbaví, čas příchodu do fronty a čas jeho odbavení (abychom byli schopni zjisti dobu jakou zákazník ve frontě strávil).
+
+Další entitou simulace je Pokladní. Pokladní má před sebou frontu čekajících zákazníků, které musí obsloužit. Pokud pokladní neobsluhuje zákazníka a fronta není prázdná, začne prvního zákazníka ve frontě obsluhovat. Obsloužený zákazník je odebrán z fronty. V případě kdy ve frontě není žádný zákazník, pokladní nic nedělá.
+
+Cílem simulace bude zjištění průměrného času stráveného zákazníkem ve frontě.
+
+\section{Komponenty událostně řízené simulace}
+
+Abychom mohli příklad z úvodu této kapitoly simulovat, je potřeba definovat základní komponenty událostně řízené simulace.
+
+\subsubsection{Entita}
+
+Entitou rozumíme jakýkoliv objekt zájmu v systému. V příkladu obchodního domu se jedná například o pokladníka nebo zákazníka. Každá entita může mít své atributy - vlastnosti.
+
+\subsubsection{Stav systému}
+
+Každá událostně řízená simulace má svůj globální stav systému. Ten zahrnuje všechny proměnné a atributy studovaného systému. Globální stav se může v průběhu
+simulace měnit vykonáváním událostí.
+
+\subsubsection{Čas}
+
+Simulace musí udržovat svůj simulační čas. Jednotky času nejsou pevně definovány a jejich volba je na vývojáři. Jak již bylo zmíněno, simulační čas se nemění spojitě, ale mění se skokově s jednotlivými událostmi.
+
+\subsubsection{Seznam událostí}
+
+Další důležitou částí událostně řízené simulace je seznam událostí. V seznamu jsou události, které ještě nebyly zpracovány. O každé události je znám čas, ve kterém se má udát, a kód potřebný k jejímu vykonání. Události jsou seřazeny vzestupně podle simulačního času. Pokud je simulace jednovláknová, existuje vždy právě jedna aktuálně prováděná událost.
+
+Události jsou vetšinou do seznamu událostí přidávány dynamicky v průběhu simulace. V příkladu obchodního domu je například po startu simulace na čas $t$ naplánována událost příchodu nového zákazníka do fronty. Pokud v tu dobu nebyl ve frontě žádný zákazník, může být rovnou naplánována i událost odbavení tohoto zákazníka na čas $t+s$, kde $s$ je doba obsluhy zákazníka pokladním.
+
+\subsubsection{Generátor náhodných čísel}
+
+Simulace využívá náhodných čísel například pro generování časů událostí. V příkladu s obchodním domem jde například o generování příchozích zákazníků řadících se na konec fronty. Většinou jsou využity pseudo-náhodné generátory. Umožňují totiž opakovat simulaci se stejným průběhem.
+
+\subsubsection{Statistiky}
+
+V průběhu simulace se obvykle udržují statistiky o běhu systému. Jedná se o různé informace, které jsou z hlediska simulace zajímavé. Pro obchodní dům může jít například o průměrnou dobu čekání zákazníka ve frontě.
+
+\subsubsection{Ukončovací podmínka}
+
+Protože události jsou generovány dynamicky v průběhu simulace, mohla by být simulace nekonečná. Je tak potřeba definovat podmínku pro její ukončení. Typicky je simulace ukončena po dosažení určitého simulačního času, nebo například po zpracování určitého počtu událostí (například obsloužených zákazníků).
+
+\section{Průběh událostně řízené simulace}
+
+Událostně řízená simulace se obecně řídí následujícím algoritmem:
+
+\begin{itemize}
+\item Inicializace stavu systému a ukončovací podmínky na False. 
+\item Inicializace hodin (obvykle na hodnotu 0).
+\item Naplánování prvotní události (její vložení do seznamu událostí).
+\item Dokud není ukončovací podmínka rovna True:
+\begin{itemize}
+\item Nastavení hodin na čas další události podle seznamu událostí.
+\item Vykonání události a její odstranění ze seznamu událostí.
+\item Aktualizace statistik systému.
+\end{itemize}
+\item Vygenerování hlášení o simulaci.
+\end{itemize}
 
 \section{DEVS}
 
-DEVS (Discrete Event System Specification) je hierarchický a modulární formalismus pro návrh a modelování systémů s diskrétními událostmi. Jeho autorem je profesor Bernard P. Zeigler, který jej poprvé publikoval ve své knize Theory of Modeling and Simulation.
+DEVS (Discrete Event System Specification) je hierarchický a modulární formalismus pro návrh a modelování systémů s diskrétními událostmi. Jeho autorem je profesor Bernard P. Zeigler, který jej poprvé publikoval ve své knize Theory of Modeling and Simulation. Právě modularita tohoto přístupu k událostně řízené simulaci jej dělá optimální pro tvorbu modulárního simulátoru.
 
-Základem formalismu DEVS je atomický model popisující chování části systému. Je definován jako sedmice:
+DEVS definuje jak strukturu tak chování systému. Chování jednotlivých entit systému je popsáno pomocí atomického modelu. Struktura celého systému (tzv. propojení jednotlivých atomických modelů) popisuje spojovaný model. Tato podkapitola stručně popisuje tyto dva modely.
+
+\subsection{Atomický model}
+
+Základem formalismu DEVS je atomický model popisující chování části systému. Atomický model modeluje dynamický systém, který se mění v důsledku změny jeho okolí a své okolí ovlivňuje svými změnami.
+
+Proměnné, které mění atomický model označujeme jako jeho vstupy a popisujeme jako množinu $X$. Jako $Y$ označujeme množinu výstupů modelu, které pak mění jeho okolí. Množina atributů, které definují interní stav atomického modelu značíme jako $S$.
+
+Chování atomického modelu je definováno jeho přechodovými funkcemi (interní a externí), jeho výstupní funkcí a funkcí posunu času.
+
+\subsubsection{Funkce posunu času a interní přechodové funkce}
+
+Systémy s diskrétními událostmi mohou měnit svůj stav a produkovat výstup autonomně bez jakékoliv příčiny z vnějšího prostředí. Systém může rovněž reagovat na vstup se zpožděním. Proto je k dispozici funkce posunu času. Tato funkce je definována jako $ta:S \rightarrow \mathbb{T}^\infty$ a určuje dobu setrvání ve stavu $S$.
+
+Pokud systém přejde do stavu $s$, zůstane v tomto stavu po dobu $ta(s)$ nebo dokud jiná vstupní událost nepřepne systém do jiného stavu.
+
+Atomický model v každém svém interním stavu zůstává po omezenou dobu. Po této době je zavolána jeho interní přechodová funkce. Doba trvání interního stavu je dána množinou $Q=\{(s,t_e)|s \in S, t_e \in (\mathbb{T} \cap [0, ta(s)])\}$, kde $t_e$ je doba setrvání ve stavu $s$ a $ta(s)$ je funkce posunu času.
+
+Interní přechodová funkce je definována jako $\delta_{int}:S \rightarrow S$ a určuje změnu stavu systému v případě autonomní události. Změna stavu v závilosti na externí události je definována externí přechodovou funkcí, která má tvar $\delta_{ext}:Q \times X \rightarrow  S$.
+
+V případě, kdy externí i interní událost nastane ve stejném čase, je výstupní stav definován kolizní přechodovou funkcí definovanou jako $\delta_{con}:S \times X \rightarrow  S$
+
+\subsubsection{Funkce výstupu}
+
+Výstup systému probíhá v rámci jeho autonomní události. Systém však může generovat výstup také jako reakci na vstupní událost pomocí vygenerování autonomní události. Mezi přijetím vstupní události a vygenerováním výstupu existuje zpoždění.
+
+Výstupní funkce má tvar $\lambda:S \rightarrow  Y^\phi$, kde $Y^\phi=Y \cup \{\phi\}$ a $\phi \not\in Y$.
+
+\subsubsection{Formální definice}
+
+Formálně je atomický model definován jako sedmice:
 
 \begin{math}
 M=<X,Y,S,ta, \delta_{ext}, \delta_{int}, \lambda>
@@ -287,9 +384,22 @@ M=<X,Y,S,ta, \delta_{ext}, \delta_{int}, \lambda>
 \item $\lambda:S \rightarrow  Y^\phi$ je výstupní funkce, kde $Y^\phi=Y \cup \{\phi\}$ a $\phi \not\in Y$. Tato funkce definuje jak změna stavu systému, po uplynutí doby setrvání v něm, generuje výstupní událost.
 \end{itemize}
 
-Atomické modely tedy reagují na vstupní události změnou svého stavu a případně také generováním výstupní události. Svůj stav mohou měnit také samovolně po uplynutí doby setrvání v daném stavu.
+\subsection{Spojovaný model}
 
-Atomické modely je možné dále hiearchicky sdružovat do spojovaných DEVS modelů definovaných jako osmice:
+Atomické modely je možné dále hiearchicky sdružovat do spojovaných DEVS modelů a definovat tím strukturu systému.
+
+Spojovaný model (viz obrázek \ref{fig:coupled}) je tvořen svými komponentami (atomickými modely nebo jinými spojovanými modely), propojeními mezi těmito komponentami, propojeními mezi vstupy a výstupy spojovaného modelu a vstupy a výstupy jednotlivých komponent. 
+
+Množinu vstupů spojovaného modulu značíme jako $X$, množinu výstupů pak jako $Y$. Množinu jmen jednolivých komponent jako $D$. Množina samotných komponent je pak značena jako $M_i$, kde pro každou podkomponentu platí $i \in D$.
+
+Množinu externích vstupních propojení ....
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/coupled}
+\caption{Spojovaný model tvořený atomickými modely A a B.}
+\label{fig:coupled}
+\end{figure}
 
 \begin{math}
 N=<X,Y,D,\{M_i\},C_{xx}, C_{yx}, C_{yy}, Select>
@@ -307,6 +417,35 @@ N=<X,Y,D,\{M_i\},C_{xx}, C_{yx}, C_{yy}, Select>
 \end{itemize}
 
 Podobně jako atomické modelu, mění i spojované modely stavy svých komponent v případě příchozí události nebo pokud jedna z podkomponent spustí svoji funkci změny stav $\delta_{int}$ a vygeneruje výstup. V obou případech jsou tyto události přeposlány ostatním komponentám definovaným v množiných propojení $C_{xx}$, $C_{yy}$ a $C_{yx}$.
+
+\subsubsection{Příklad využití formalismu DEVS}
+
+Příklad simulace fronty v obchodním domě lze popsat pomocí formalismu DEVS. Jak lze vidět na obrázku \ref{fig:fronta}, jedná se o tří atomické modely propojené v rámci jednoho spojovaného modelu.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/fronta}
+\caption{Model fronty obchodního domu popsaný pomocí formalismu DEVS.}
+\label{fig:fronta}
+\end{figure}
+
+Atomický model Generátor zajišťuje generování zákazníků, kteří jsou pak přidáni na konec fronty. Zákazníci jsou v čase generováni pomocí náhodného rozložení. Model Generátor má jedinou výstupní událost nazvanou "příchod zákazníka", která je napojena na vstupní událost dalšího atomického modelu nazvaného Pokladní.
+
+Atomický model Pokladní reprezentuje pokladního a jeho frontu. Při každé vstupní události "příchod zákazníka" je zavolána funkce externího přechodu a nový zákazník je uložen do fronty uvnitř tohoto modelu. Funkce posunu času plánuje následující událost modelu v závislosti na době zbývající k obsloužení aktuálního zákazníka.
+
+Jakmile je zákazník obsloužen (tzv. po uplynutí doby definované funkcí posunu času), je nejprve zavolána výstupní funkce modelu. V této funkci je zákazník předán na výstup nazvaný "odchod zákazníka". Ihned po výstupní funkci je zavolána interní přechodová funkce. Tato funkce odebere obslouženého zákazníka z fronty a začne obsluhu následujícího zákazníka.
+
+V případě kdy zákazník příjde do fronty ve stejnou dobu jako je jiný zákazník obsloužen, je zavolána kolizní funkce. Tato kolize je řešena dokončením obsloužení aktuálního zákazníka a až pak přidáním nového zákazníka na konec fronty.
+
+Posledním atomickým modelem je model Statistiky. Tento model obsahuje vstupní událost "odchod zákazníka", na kterou je napojena stejnojmenná výstupní událost modelu Pokladní. Úkolem tohoto modelu je uložit ve své externí přechodové funkci dobu, kterou každý zákazník strávil ve frontě a na konci simulace vypsat statistické informace.
+
+\section{Knihovna ADEVS umožňující událostně řízenou simulaci}
+
+V této podkapitole je stručně popsána knihovna ADEVS umožňující událostně řízenou simulaci. Vzhledem k povaze diplomové práce bylo potřeba využít open-source knihovnu podporující jazyk C++. Knihovna ADEVS je jako jediná aktivně vyvíjená knihovna schopna tyto požadavky splnit.
+
+Jejím autorem je James J. Nutaro působící v Oak Ridge National Laboratory. Knihovna je vydána pod licencí LGPLv2+.
+
+
 
 \chapter{Návrh událostně řízeného simulátoru}
 \label{navrh}
@@ -560,13 +699,13 @@ Uživateli bude umožněno vybrání pinů na kreslící ploše a jejich zařaze
 
 Cílem této kapitoly je popsat výsledný implementovaný simulátor založený na předešlém návrhu. Jako výchozí jazyk byl zvolen jazyk C++. Jedná se o jazyk podporující objektově orientované programování (OOP), čímž zjednodušuje dekompozici celého projektu na menší celky. Nástroj QDevKit, který může v budoucnu implementovaný simulátor rozšířit, je rovněž programován v jazyce C++, takže bude jejich budoucí spravování jednodušší.
 
-Pro tvorbu grafického uživatelského rozhraní byla použita knihovna Qt. Jedná se o multiplatformní knihovnu použitou i v projektu QDevKit licencovanou pod licencí LGPL.
+Pro tvorbu grafického uživatelského rozhraní byla použita knihovna Qt \cite{qt}. Jedná se o multiplatformní knihovnu použitou i v projektu QDevKit licencovanou pod licencí LGPL.
 
 V následujících kapitolách jsou popsány implementační detaily jednotlivých částí simulátoru. Vzhledem k rozsáhlosti celého projektu se tato kapitola soustředí pouze na nejzajímavější aspekty implementace a nepopisuje implementaci do úplných detailů.
 
 \section{Implementace simulačního jádra}
 
-Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci za pomocí formalismu DEVS a je šířena pod licencí GPLv2+. Díky této licenci může být použita i v případě bližší integrace simulátoru do prostředí QDevKit.
+Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci za pomocí formalismu DEVS a je šířena pod licencí GPLv2+. Díky této licenci může být použita i v případě bližší integrace simulátoru do prostředí QDevKit. Příklady využití knihovny ADEVS včetně její specifikace jsou k dispozici v rámci \cite{nutaro}.
 
 \subsection{Knihovna ADEVS a její využití}
 
@@ -588,7 +727,7 @@ To představuje problém, protože, jak lze vidět na obrázku \ref{fig:adevs_cl
 Tento problém byl vyřešen oddělením simulační části komponenty do samostatné třídy SimulationObjectWrapper dědící ze třídy adevs::Atomic a využívající návrhový vzor Proxy. Tato třída mapuje volání metod třídy adevs::Atomic na volání třídy SimulationObject, ze které pak všechny simulované komponenty dědí
 své chování. Tento vztah znázorňuje obrázek \ref{fig:adevs_classes}. Při restartování simulace tak nemusí být smazána a znovu vytvořena celá komponenta (třída SimulationObject), ale pouze třída SimulationObjectWrapper.
 
-Třída adevs::Simulator potřebuje ke svému běhu také instanci třídy adevs::Network. Tato třída reprezentuje formalismus Spojovaného DEVS a definuje sadu čistě virtuálních metod, které pak dceřiné třídy implementují (například pomocí metody route(...) se směrují události mezi komponentami). Knihovna ADEVS obsahuje několik implementací této třídy.
+Třída adevs::Simulator potřebuje ke svému běhu také instanci třídy adevs::Network. Tato třída reprezentuje formalismus Spojovaného DEVS a definuje sadu čistě virtuálních metod \cite{oop}, které pak dceřiné třídy implementují (například pomocí metody route(...) se směrují události mezi komponentami). Knihovna ADEVS obsahuje několik implementací této třídy.
 
 Bohužel jsou však tyto implementace velmi obecné a tím pádem i pomalé. Bylo tak nutné vytvořit novou třídu SimulationModel, která pracuje přímo s objekty typu SimulationObjectWrapper.
 
@@ -1045,7 +1184,7 @@ Modul LED diody (lze vidět na obrázku \ref{fig:dioda}) je rovněž implementov
 
 \subsection{LCD displej}
 
-Modul LCD displeje (viz obrázek \ref{fig:lcd}) implementuje v jazyce Python LCD displej postavený na integrovaném obvodu HD44708. Nejedná se o kompletní implementaci tohoto integrovaného obvodu. Pro účely testování simulátoru byly implementovány pouze následující vlastnosti obvodu HD44708:
+Modul LCD displeje (viz obrázek \ref{fig:lcd}) implementuje v jazyce Python LCD displej postavený na integrovaném obvodu HD44780 \cite{hd44780}. Nejedná se o kompletní implementaci tohoto integrovaného obvodu. Pro účely testování simulátoru byly implementovány pouze následující vlastnosti obvodu HD44780:
 
 \begin{itemize}
 \item Pouze 1 řádek, 16 alfanumerických znaků.
@@ -1064,7 +1203,7 @@ Modul LCD displeje (viz obrázek \ref{fig:lcd}) implementuje v jazyce Python LCD
 
 \subsection{SD karta}
 
-Modul SD karty (viz obrázek \ref{fig:sd}) vznikl zejména za účelem testování komunikačních modulů komunikujících pomocí SPI. Podobně jako modul LCD displeje je i modul SD karty naprogramován v jazyce Python a neimplementuje kompletní standard definující komunikační rozhraní SD karty. Implementace modulu je v rámci diplomové práce omezena na následující vlastnosti:
+Modul SD karty (viz obrázek \ref{fig:sd}) vznikl zejména za účelem testování komunikačních modulů komunikujících pomocí SPI. Podobně jako modul LCD displeje je i modul SD karty naprogramován v jazyce Python a neimplementuje kompletní standard \cite{sdio} definující komunikační rozhraní SD karty. Implementace modulu je v rámci diplomové práce omezena na následující vlastnosti:
 
 \begin{itemize}
 \item Velikost SD karty pouze 2MB.
