@@ -10,7 +10,7 @@ Tato diplomová práce si dává za cíl návrh a implementaci jednoduše rozši
 
 Tato diplomová práce je rozdělena do osmi kapitol.
 
-První kapitola obsahuje úvod. Dále následuje kapitola stručně popisující strukturu mikrokontroleru MSP430, jeho instrukční sadu, základní interní periferie a formáty používané pro uložení binárního kódu tohoto mikrokontroleru. Třetí kapitola se zabývá událostně řízenou simulací, konkrétně pak formalismem DEVS. Ve čtvrté kapitole je proveden samotný návrh simulátoru. Popisem implementace tohoto návrhu se zabývá pátá kapitola. V šesté kapitole je implementovaný simulátor verifikován porovnáním s reálným mikrokontrolerem MSP430. Sedmá kapitola popisuje formou případové studie možnosti rozšíření simulátoru o nové periferie. Na závěr je implementovaný simulátor zhodnocen.
+První kapitola obsahuje úvod. Dále následuje kapitola stručně popisující strukturu mikrokontroleru MSP430, jeho instrukční sadu, základní interní periferie a formáty používané pro uložení binárního kódu tohoto mikrokontroleru. Třetí kapitola se zabývá událostně řízenou simulací, konkrétně pak formalismem DEVS. Ve čtvrté kapitole je proveden samotný návrh simulátoru. Popisem implementace tohoto návrhu se zabývá pátá kapitola. V šesté kapitole je implementovaný simulátor otestován porovnáním s reálným mikrokontrolerem MSP430. Sedmá kapitola popisuje formou případové studie možnosti rozšíření simulátoru o nové periferie. Na závěr je implementovaný simulátor zhodnocen.
 
 \chapter{Mikrokontroler MSP430}
 
@@ -276,7 +276,7 @@ Další podkapitoly v této kapitole se budou odkazovat na následující typick
 
 Zákaznící mohou přicházet do obchodu a jsou obslouženi pokladní v pořadí, v jakém k pokladně přisli. Čas potřebný k odbavení zákazníka je závislý na počtu položek v jeho nákupním koši (Takže je pro každého zákazníka rozdílný).
 
-První entitou takovéto simulace je Zákazník. O každém zákazníkovi potřebujeme vědět dobu, za jakou ho pokladník odbaví, čas příchodu do fronty a čas jeho odbavení (abychom byli schopni zjisti dobu jakou zákazník ve frontě strávil).
+První entitou takovéto simulace je Zákazník. O každém zákazníkovi potřebujeme vědět dobu, za jakou ho pokladník odbaví, čas příchodu do fronty a čas jeho odbavení (abychom byli schopni zjistit dobu jakou zákazník ve frontě strávil).
 
 Další entitou simulace je Pokladní. Pokladní má před sebou frontu čekajících zákazníků, které musí obsloužit. Pokud pokladní neobsluhuje zákazníka a fronta není prázdná, začne prvního zákazníka ve frontě obsluhovat. Obsloužený zákazník je odebrán z fronty. V případě kdy ve frontě není žádný zákazník, pokladní nic nedělá.
 
@@ -315,7 +315,7 @@ V průběhu simulace se obvykle udržují statistiky o běhu systému. Jedná se
 
 \subsubsection{Ukončovací podmínka}
 
-Protože události jsou generovány dynamicky v průběhu simulace, mohla by být simulace nekonečná. Je tak potřeba definovat podmínku pro její ukončení. Typicky je simulace ukončena po dosažení určitého simulačního času, nebo například po zpracování určitého počtu událostí (například obsloužených zákazníků).
+Protože události jsou generovány dynamicky v průběhu simulace, mohla by být simulace nekonečná. Je tak potřeba definovat podmínku pro její ukončení. Typicky je simulace ukončena po dosažení určitého simulačního času, nebo například po zpracování určitého počtu událostí (například po určitém počtu obsloužených zákazníků).
 
 \section{Průběh událostně řízené simulace}
 
@@ -334,9 +334,9 @@ Událostně řízená simulace se obecně řídí následujícím algoritmem:
 \item Vygenerování hlášení o simulaci.
 \end{itemize}
 
-\section{DEVS}
+\section{Formalismus DEVS pro modelování systémů}
 
-DEVS (Discrete Event System Specification) je hierarchický a modulární formalismus pro návrh a modelování systémů s diskrétními událostmi. Jeho autorem je profesor Bernard P. Zeigler, který jej poprvé publikoval ve své knize Theory of Modeling and Simulation. Právě modularita tohoto přístupu k událostně řízené simulaci jej dělá optimální pro tvorbu modulárního simulátoru.
+DEVS (Discrete Event System Specification) je hierarchický a modulární formalismus pro návrh a modelování systémů s diskrétními událostmi. Jeho autorem je profesor Bernard P. Zeigler, který jej poprvé publikoval ve své knize Theory of Modeling and Simulation \cite{zeigler}. Právě modularita tohoto přístupu k událostně řízené simulaci jej dělá optimální pro tvorbu modulárního simulátoru.
 
 DEVS definuje jak strukturu tak chování systému. Chování jednotlivých entit systému je popsáno pomocí atomického modelu. Struktura celého systému (tzv. propojení jednotlivých atomických modelů) popisuje spojovaný model. Tato podkapitola stručně popisuje tyto dva modely.
 
@@ -390,9 +390,11 @@ Atomické modely je možné dále hiearchicky sdružovat do spojovaných DEVS mo
 
 Spojovaný model (viz obrázek \ref{fig:coupled}) je tvořen svými komponentami (atomickými modely nebo jinými spojovanými modely), propojeními mezi těmito komponentami, propojeními mezi vstupy a výstupy spojovaného modelu a vstupy a výstupy jednotlivých komponent. 
 
-Množinu vstupů spojovaného modulu značíme jako $X$, množinu výstupů pak jako $Y$. Množinu jmen jednolivých komponent jako $D$. Množina samotných komponent je pak značena jako $M_i$, kde pro každou podkomponentu platí $i \in D$.
+Množinu vstupů spojovaného modelu značíme jako $X$, množinu výstupů pak jako $Y$. Množinu jmen jednolitvých komponent jako $D$. Množina samotných komponent je pak značena jako $M_i$, kde pro každou podkomponentu platí $i \in D$.
 
-Množinu externích vstupních propojení ....
+Spojovaný model dále definuje 3 množiny propojení. Množina $C_{xx}\subseteq X \times \bigcup_{i \in D} X_i$ se nazývá množina externích vstupních propojení a mapu vstupy spojovaného modelu na vstupny jednolivých jeho komponent. Množina $C_{yx}\subseteq \bigcup_{i \in D} Y_i \times \bigcup_{i \in D} X_i$ se nazývý množina interních propojení a mapuje výstupy jednotlivých komponent spojovaného modelu na jejich vstupy. Poslední množinou je množina $C_{yy}: \bigcup_{i \in D} Y_i \rightarrow Y^\phi$ mapující výstupy jednotlivých komponent spojovaného modelu na výstupy spojovaného modelu.
+
+V případě, kdy ve stejný čas nastane více událostí, je potřeba vybrat komponentu, která bude zpracovávat událost jako první. K tomu slouží funkce $Select:2^D \rightarrow D$ určující, jak vybrat komponentu zpracovávající událost z množiny událostí naplánovaných na stejný čas.
 
 \begin{figure}[ht]
 \centering
@@ -400,6 +402,8 @@ Množinu externích vstupních propojení ....
 \caption{Spojovaný model tvořený atomickými modely A a B.}
 \label{fig:coupled}
 \end{figure}
+
+\subsubsection{Formální definice}
 
 \begin{math}
 N=<X,Y,D,\{M_i\},C_{xx}, C_{yx}, C_{yy}, Select>
@@ -413,7 +417,7 @@ N=<X,Y,D,\{M_i\},C_{xx}, C_{yx}, C_{yy}, Select>
 \item $C_{xx}\subseteq X \times \bigcup_{i \in D} X_i$ - množina externích vstupních propojení.
 \item $C_{yx}\subseteq \bigcup_{i \in D} Y_i \times \bigcup_{i \in D} X_i$ - množina interních propojení.
 \item $C_{yy}: \bigcup_{i \in D} Y_i \rightarrow Y^\phi$ - množina externích výstupních propojení.
-\item $Select:2^D \rightarrow D$ - množina funkcí určující jak vybrat událost z množiny událostí naplánovaných na stejný čas.
+\item $Select:2^D \rightarrow D$ - funkce určující, jak vybrat komponentu zpracovávající událost z množiny událostí naplánovaných na stejný čas.
 \end{itemize}
 
 Podobně jako atomické modelu, mění i spojované modely stavy svých komponent v případě příchozí události nebo pokud jedna z podkomponent spustí svoji funkci změny stav $\delta_{int}$ a vygeneruje výstup. V obou případech jsou tyto události přeposlány ostatním komponentám definovaným v množiných propojení $C_{xx}$, $C_{yy}$ a $C_{yx}$.
@@ -445,7 +449,209 @@ V této podkapitole je stručně popsána knihovna ADEVS umožňující událost
 
 Jejím autorem je James J. Nutaro působící v Oak Ridge National Laboratory. Knihovna je vydána pod licencí LGPLv2+.
 
+\subsection{Atomický model}
 
+Atomický model formalismu DEVS je v knihovně ADEVS reprezentován třídu Atomic. Každý model (a tedy i třída Atomic) má své vstupy a výstupy. Jednotlivé vstupy a výstupy jsou definovány třídou PortValue. Tato třída popisuje pár klíč-hodnota, kde klíčem je celé číslo určující index vstupu nebo výstupu a hodnotou je typ dat na vstupu nebo výstupu.
+
+V modelovém příkladu obchodního domu je hodnotou na vstupech a výstupech zákazník. Zákazníka, společně s podtřídou definující typ vstupů a výstupů, lze definovat následovně:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+struct Customer {
+    double twait; // Čas potřebný pro obsloužení zákazníka
+    double tenter, tleave; // Čas příchodu a odchodu zákazníka
+};
+// Definice typu vstupu a výstupů jednotlivých modelů
+typedef adevs::PortValue<Customer*> IO_Type;
+\end{lstlisting}
+
+Třída Atomic definující atomický model vychází přímo z formalismu DEVS. Nový model vznikne vytvořením třídy dědící třídu Atomic, která implementuje jednotlivé funkce atomického modelu formalismu DEVS. Třída Atomic má tak následující metody, které je potřeba pro každý model definovat:
+
+\begin{itemize}
+\item delta\_int() - Metoda odpovídající funkci $\delta_{int}$ formalismu DEVS.
+\item delta\_ext(...) - Metoda odpovídající funkci $\delta_{ext}$ formalismu DEVS.
+\item delta\_conf(...) - Metoda odpovídající funkci $\delta_{conf}$ formalismu DEVS.
+\item output\_func(...) - Metoda odpovídající funkci $\lambda$ formalismu DEVS.
+\item ta() - Metoda odpovídající funkci $ta(s)$ formalismu DEVS.
+\item gc\_output(...) - Metoda sloužící k odstranění nepotřebných objektů vytvořených v rámci ostatních metod.
+\end{itemize}
+
+Pro modelový příklad obchodního domu by pak kostra atomického modelu definujícího Pokladního vypadala následovně:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+class Clerk: public adevs::Atomic<IO_Type>  {
+    public:
+        Clerk();
+        ~Clerk();
+
+        void delta_int();
+        void delta_ext(double e, adevs::Bag<IO_Type>& xb);
+        void delta_conf(adevs::Bag<IO_Type>& xb);
+        void output_func(adevs::Bag<IO_Type>& yb);
+        double ta();
+        void gc_output(adevs::Bag<IO_Type>& g);
+        
+        static const int arrive; // Index vstupního portu
+        static const int depart; // Index výstupního portu
+    private:
+        double t; // Simulační čas
+        list<Customer*> line; // Seznam zákazníků ve frontě
+        double t_spent; // Čas strávený s aktuálním zákazníkem
+};
+\end{lstlisting}
+
+Typ adevs::Bag je abstraktním datovým typem umožňujícím uchování jakýchkoliv objektů (v tomto případě objektů typu IO\_Type).
+
+Kostra dalších modelů (Generator a Statistics) v simulaci obchodního domu by se pak příliš nelišila od modelu zákazníka.
+
+\subsection{Spojovaný model}
+
+Spojovaný model je v knihovně ADEVS reprezentován třídou Network. Standardně nabízí knihovna ADEVS implementaci této třídy nazvanou SimpleDigraph. Pomocí této třídy lze propojovat vstupní a výstupní porty jednotlivých atomických i spojovaných modelů. Využití této třídy je přímočaré, jak ilustruje následující ukázka propojující modely Generator, Clerk:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+adevs::Digraph<Customer*> store;
+Clerk* clrk = new Clerk();
+Generator* genr = new Generator();
+// Přidání atomických modelů do spojovaného modelu "store"
+store.add(clrk); 
+store.add(genr);
+// Propojení výstupu generátoru se vstupem pokladního
+store.couple(genr, genr->arrive, clrk, clrk->arrive);
+\end{lstlisting}
+
+Zbylé modely by byly propojeny analogicky. Tímto způsobem lze pomocí mnoha dílčích atomických modelů vytvářet rozsáhlé komunikující systémy.
+
+Simulaci lze pak pomocí další třídy Simulator knihovny ADEVS spustit a krokovat:
+
+\lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, literate=%
+    {á}{{\'a}}1
+    {č}{{\v{c}}}1
+    {ď}{{\v{d}}}1
+    {é}{{\'e}}1
+    {ě}{{\v{e}}}1
+    {í}{{\'i}}1
+    {ň}{{\v{n}}}1
+    {ó}{{\'o}}1
+    {ř}{{\v{r}}}1
+    {š}{{\v{s}}}1
+    {ť}{{\v{t}}}1
+    {ú}{{\'u}}1
+    {ů}{{\r{u}}}1
+    {ý}{{\'y}}1
+    {ž}{{\v{z}}}1
+    {Á}{{\'A}}1
+    {Č}{{\v{C}}}1
+    {Ď}{{\v{D}}}1
+    {É}{{\'E}}1
+    {Ě}{{\v{E}}}1
+    {Í}{{\'I}}1
+    {Ň}{{\v{N}}}1
+    {Ó}{{\'O}}1
+    {Ř}{{\v{R}}}1
+    {Š}{{\v{S}}}1
+    {Ť}{{\v{T}}}1
+    {Ú}{{\'U}}1
+    {Ů}{{\r{U}}}1
+    {Ý}{{\'Y}}1
+    {Ž}{{\v{Z}}}1}
+\begin{lstlisting}
+adevs::Simulator<IO_Type> sim(&store);
+while (sim.nextEventTime() < DBL_MAX) {
+    sim.execNextEvent();
+}
+\end{lstlisting}
 
 \chapter{Návrh událostně řízeného simulátoru}
 \label{navrh}
@@ -695,7 +901,7 @@ V grafickém uživatelském rozhraní budou rovněž zobrazeny hodnoty registrů
 
 Uživateli bude umožněno vybrání pinů na kreslící ploše a jejich zařazení do seznamu sledovaných pinů. V pruběhu simulace se změny napětí na sledovaných pinech budou ukládat a zobrazovat uživateli v graficky pomocí rozhraní podobného osciloskopu. Uživatel tak uvidí vztahy mezi jednotlivými signály generovanými na pinech v závislosti na čase. Standardně bude rozhraní ukazovat průběh celé simulace. Bude však možné určitý časový úsek přiblížit a získat tak detailnější pohled.
 
-\chapter{Implementace}
+\chapter{Implementace událostně řízeného simulátoru}
 
 Cílem této kapitoly je popsat výsledný implementovaný simulátor založený na předešlém návrhu. Jako výchozí jazyk byl zvolen jazyk C++. Jedná se o jazyk podporující objektově orientované programování (OOP), čímž zjednodušuje dekompozici celého projektu na menší celky. Nástroj QDevKit, který může v budoucnu implementovaný simulátor rozšířit, je rovněž programován v jazyce C++, takže bude jejich budoucí spravování jednodušší.
 
@@ -703,7 +909,7 @@ Pro tvorbu grafického uživatelského rozhraní byla použita knihovna Qt \cite
 
 V následujících kapitolách jsou popsány implementační detaily jednotlivých částí simulátoru. Vzhledem k rozsáhlosti celého projektu se tato kapitola soustředí pouze na nejzajímavější aspekty implementace a nepopisuje implementaci do úplných detailů.
 
-\section{Implementace simulačního jádra}
+\section{Simulační jádra}
 
 Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci za pomocí formalismu DEVS a je šířena pod licencí GPLv2+. Díky této licenci může být použita i v případě bližší integrace simulátoru do prostředí QDevKit. Příklady využití knihovny ADEVS včetně její specifikace jsou k dispozici v rámci \cite{nutaro}.
 
@@ -790,7 +996,7 @@ Jelikož ke změně hodnoty registrů dochází velmi často, je potřeba zjisti
 
 V případě zastavení simulace na základě hodnoty v paměti je navíc umožněno zastavit simulaci v případě jakékoliv změny paměti a implementace počítá s možným budoucím rozšířením o složitější podmínky (například příslušnost hodnoty do daného intervalu nebo změna konkrétního bitu na dané adrese).
 
-\section{Implementace zpracování DWARF informací}
+\section{Zpracování ladících informací ve formátu DWARF}
 \label{label_dwarf}
 
 Aby bylo možné při ladění programu získat hodnoty a typ lokálních proměnných, je potřeba načítat a zpracovávat DWARF ladící informace. Pro samotné uchování jednotlivých struktur formátu DWARF byly vytvořeny následující abstraktní třídy (jejich vztahy lze vidět na obrázku \ref{fig:dwarf_classes}):
@@ -829,7 +1035,7 @@ Pokud není hodnota proměnné závislá na hodnotě registru PC, obsahuje insta
 
 Hodnotu proměnné je potřeba reprezentovat odpovídajícím způsobem v závislosti na jejím typu. K tomu slouží třída VariableFormatter, která na základě typu proměnné formátuje její hodnotu a vrátí ji jako řetětec znaků.
 
-\section{Implementace knihovny simulující MCU MSP430}
+\section{Knihovna simulující MCU MSP430}
 
 Knihovna simulující MCU MSP430 vykonává instrukce simulovaného programu a implementuje interní moduly poskytované mikrokontrolerem.
 
@@ -1014,7 +1220,7 @@ První třída testů většinou testuje konkrétni metody daných tříd knihov
 
 Druhá třída testů pak funguje tak, že je do paměti nahrán konkrétní program pro daný mikrokontroler a v rámci testu je instrukci po instrukci vykonáván. Vždy se testuje, zda hodnoty registrů odpovídají očekávání a zda instrukce vykonala danou operaci. Z této třídy testů lze zmínit test BlinkingLed testující program blikající LED diody, nebo test Capture testující zachytávání signálu časovačem.
 
-\section{Implementace grafického uživatelského rozhraní}
+\section{Grafické uživatelské rozhraní}
 
 Grafické uživatelské rozhraní (GUI) je naprogramováno v jazyce C++ za použití knihovny Qt a umožňuje řízení celé simulace. V této podkapitole je popsána implementace dílčích částí GUI a jejich návaznost na další části simulátoru popsané v předešlých podkapitolách.
 
@@ -1154,7 +1360,11 @@ Obdobně je volána metoda save(...) třídy ConnectionManager ukládající inf
 
 Nahrávání projektu probíhá analogicky s tím rozdílem, že jsou volány metody load(...) jednotlivých tříd, které z instance třídy QDomDocument získají potřebná data.
 
-\section{Implementované rozšiřující moduly}
+\subsection{Konzolový simulátor}
+
+Součástí simulátoru je i konzolová (textová) aplikace umožňující načítat a simulovat projekty vytvořené v grafickém uživatelském rozhraní. Tato aplikace je určena především jako ukázka, jak využít simulační jádro bez grafického uživatelského rozhraní. Výhodou je rychlejší běh simulace, protože není potřeba aktualizovat během simulace kreslící plochu a reagovat na vstupy uživatele.
+
+\section{Rozšiřující moduly}
 
 V rámci diplomové práce bylo implementováno celkem pět rozšiřujících modulů. V této podkapitole jsou jednotlivé moduly stručně popsány. Jedná se o moduly implementující tlačítko, LED diodu, LCD displej, oscilátor a SD kartu.
 
@@ -1230,15 +1440,16 @@ Modul oscilátoru (viz obrázek \ref{fig:oscilator}) slouží ke generování pe
 \label{fig:oscilator}
 \end{figure}
 
-\chapter{Verifikace}
+\chapter{Ověření korektní funkce simulátoru}
 
-V rámci této kapitoly je popsán postup verifikace simulátoru, jednotlivé testy a jejich výsledky. Cílem verifikace bylo převážně ověření časování funkcí mikrokontroleru a jeho výstupu. Vzhledem k využití automatických testů při implementaci knihovny simulující mikrokontroler MSP430 je právě časování jedinou neotestovanou částí simulátoru.
+V rámci této kapitoly je popsán postup ověření korektnosti simulátoru, jednotlivé testy a jejich výsledky. Cílem bylo převážně ověření časování funkcí mikrokontroleru a jeho výstupu. Vzhledem k využití automatických testů při implementaci knihovny simulující mikrokontroler MSP430 je právě časování jedinou neotestovanou částí simulátoru.
 
-Verifikace probíhala za použití zařízení FITKit verze 1.2 s mikrokontrolerem TODO. Do tohoto mikrokontroleru byly nahrávány testovací programy a výstup mikrokontroleru byl snímán dvoukanálovým osciloskopem TODO. Následně byl stejný program spuštěn v simulátoru a za pomocí sledování pinů byly naměřeny hodnoty ze stejných pinů jako na reálném mikrokontroleru.
+Testování probíhalo za použití zařízení FITKit verze 1.2 s mikrokontrolerem TODO. Do tohoto mikrokontroleru byly nahrávány testovací programy a výstup mikrokontroleru byl snímán dvoukanálovým osciloskopem TODO. Následně byl stejný program spuštěn v simulátoru a za pomocí sledování pinů byly naměřeny hodnoty ze stejných pinů jako na reálném mikrokontroleru.
 
 V dalších podkapitolách jsou jednotlivé testovací programy podrobněji rozebrány a okomentovány jejich výsledky.
 
-\section{Verifikace vztahu mezi instrukcemi a MCLK}
+\section{Ověření vztahu mezi instrukcemi a MCLK}
+\label{test1}
 
 Tento test byl zaměřen na ověření časování instrukcí a jejich návaznost na tikání MCLK hodin. Byl použit jednoduchý program, který nastaví počáteční frekvenci mikrokontroleru (registry BCSCTL1 a DCOCTL). Dále nastaví pin P1.4 jako výstupní a na jeho výstup zvolí hodinový signál SMCLK. Tento signál je standardně nastaven na stejnou frekvenci jako MCLK a lze jej tak považovat v rámci tohoto testu jako ekvivalentní MCLK. Výstup MCLK nemohl být použit přímo z důvodu konstrukce zařízení FITKit. Jako výstupní byl rovněž nastaven pin P1.7, na kterém pak ve smyčce program invertuje jeho hodnotu. Celý kód programu vypadal takto:
 
@@ -1281,7 +1492,8 @@ V simulátoru setrval pin P1.7 v jednom stavu po dobu 2.31359 us. Rovněž došl
 
 Z porovnání výsledků lze vidět, že časování simulátoru je velmi blízké reálnému mikrokontroleru. Odchylka je způsobena zejména standardně využitým DCO oscilátorem, který může dosahovat na reálném mikrokontroleru větších nepřesností. Při použití přesného externího oscilátoru lze očekávat ještě přesnější výsledky.
 
-\section{Verifikace časování instrukcí}
+\section{Ověření časování instrukcí}
+\label{test2}
 
 Tento test je podobný jako test předchozí, ale do hlavní smyčky programu byla vložena další čekací smyčka, která prodlužuje frekvenci invertování pinů. Cílem testu je ověřit časování instrukcí na delším časovém úseku. Pro vizuální kontrolu na zařízení FITKit je invertován rovněž pin P1.0 blikající červenou diodou.
 
@@ -1328,7 +1540,8 @@ Doba setrvání pinu P1.7 v jednom stavu byla 62.5 ms. Výsledky stejného progr
 
 Z porovnání výsledků opět vyplývá, že simulovaný program odpovídá programu na reálném mikrokontroleru. Drobná odchylka je způsobena rozdílnou frekvencí reálného mikrokontroleru. Ke zpřesnění by opět došlo při použití externího oscilátoru místo interního oscilátoru DCO.
 
-\section{Verifikace časovače}
+\section{Ověření funkce časovače}
+\label{test3}
 
 Cílem tohoto testu bylo ověřit správnou funkci časovače za použití jednoduchého programu invertujícího periodicky výstupní pin P1.7. Program nastaví časovač na vyvolání přerušení při napočítání do 1260. Po pěti přerušeních je invertován pin P1.7.
 
@@ -1351,11 +1564,8 @@ int main(void) {
 	BCSCTL1 = ((BCSCTL1 & ~(0x0f)) | 7);
 	DCOCTL  = ((DCOCTL & ~(0xe0)) | (3 << 5));
 	TACTL |= (TASSEL_2 + ID_0 + TACLR);
-	CCR0 = 1260;
-	CCTL0 = CCIE;
-	TACTL |= MC_1;
-	P1DIR |= BIT7;
-
+	CCR0 = 1260;	CCTL0 = CCIE;
+	TACTL |= MC_1; 	P1DIR |= BIT7;
 	__enable_interrupt();
 	while(1) {}
 	return 0;
@@ -1383,7 +1593,39 @@ Doba setrvání pinu P1.7 v jednom stavu byla 4.18 ms. Výsledky stejného progr
 
 V simulátoru byla naměřena hodnota 4.16 ms. Časování simulovaného programu tak odpovídá reálnému mikrokontroleru.
 
-\chapter{Případová studie - tvorba rozšiřujících modulů}
+\section{Test rychlosti simulace}
+
+V následující části jsou jednotlivé testy z předchozích podkapitol spuštěny znovu za účelem porovnání rychlosti simulace s reálným mikrokontrolerem.
+
+Testy byly prováděny na notebooku s procesorem AMD Turion II P520 Dual-Core Processor o frekvenci 2300 MHz. Výsledkem testování jsou tabulky porovnávající délku simulace nutnou k odsimulování 500 ms běhu mikrokontroleru. Testy byly prováděny jak v grafickém uživatelském rozhraní tak v konzolovém simulátoru.
+
+Obrázek \ref{fig:tabulka1} zobrazuje tabulku s výsledky rychlosti simulace na mikrokontroleru řady MSP430x16x o frekvenci 3 025 596 Hz. Test 1 až Test 3 v této tabulce koresponduje s programy v podkapitolách \ref{test1}, \ref{test2} a \ref{test3}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 23.5cm 2cm 2cm]{fig/tabulka1}
+\caption{Tabulka shrnující testy rychlosti simulace na mikrokontroleru řady MSP430x16x o frekvenci 3 025 596 Hz}
+\label{fig:tabulka1}
+\end{figure}
+
+Jak lze z tabulky na první pohled vyčíst, je konzolová aplikace přibližně 2.38x rychlejší než stejná simulace v grafickém uživatelském rozhraní. To je způsobeno nutností aktualizace grafického uživatelského rozhraní v průběhu simulace.
+
+Z tabulky rovněž vyplývá, že grafické uživatelské rozhraní zpracuje za sekundu 353612 simulačních událostí, zatímco konzolová aplikace jich zpracuje 843847. Dále je patrné, že Test 3 trval déle než ostatní testy. To je způsobeno běžícím časovačem v tomto testu, který generuje další simulační události, které je třeba obsloužit, což zabere další čas.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=0cm 23.5cm 2cm 2cm]{fig/tabulka2}
+\caption{Tabulka shrnující testy rychlosti simulace na mikrokontroleru řady MSP430x241x o frekvenci 1 262 917 Hz}
+\label{fig:tabulka2}
+\end{figure}
+
+Stejný výsledek lze očekávat i při použití jiných periferií (například i externích modulů). Čím více simulačních událostí bude generováno v malém časovém intervalu, tím pomalejší simulace bude. To je rovněž umocněno tím, že simulace je sekvenční, zatímco na reálném mikrokontroleru běží většina procesů parelelně.
+
+Obrázek \ref{fig:tabulka2} pak zobrazuje výsledky ze simulace na mikrokontroleru řady MSP430x214x o frekvenci 1 262 917 Hz.
+
+Z porovnání obou tabulek je zřejmé, že s nižší frekvencí mikrokontroleru je simulace rychlejší, ale zpracuje se méně instrukcí. To je logické, protože nižší frekvence vede k větší časové prodlevě mezi jednotlivými simulačními událostmi a během 500 ms se jich tím pádem zpracuje méně.
+
+\chapter{Tvorba modulů rozšiřujících základní funkci}
 \label{pripad}
 
 Cílem této kapitoly je popsat a názorně ukázat modulárnost implementovaného simulátoru prostřednictvím tvorby dvou nových periferií - tlačítka a oscilátoru. Pro názornost bude tlačítko naprogramováno v jazyce Python a oscilátor v jazyce C++. Tato kapitola rovněž prakticky popisuje rozhraní pro tvorbu nových modulů pro oba tyto jazyky.
@@ -2419,7 +2661,7 @@ Cílem této práce bylo seznámení s mikrokontrolery MSP430, návrh simulátor
 
 Simulátor je navíc navržen tak, že je v budoucnu možné simulovat i jiné mikrokontrolery než MSP430. Díky oddělení simulačního jádra od grafického uživatelského rozhraní je rovněž možné zakomponovat simulaci i do jiných projektů, vytvořit nové uživatelské rozhraní nebo případně provádět simulace automaticky bez jakéhokoliv grafického rozhraní. Toho lze v praxi využít například pro tvorbu automatických testů při návrhu softwaru pro vestavěný systém.
 
-Pro implementaci simulátoru byl využit jazyk C++ společně s frameworkem Qt, čímž je zjednodušena případná budoucí distribuce simulátoru společně se softwarem QDevKit a výsledný simulátor je jednoduše přenositelný a spravovatelný. Díky využití automatických jednotkových testů testujících implementaci knihovny simulující mikrokontroler MSP430 je implementace mikrokontroleru MSP430 dobře otestována. Verifikací simulátoru oproti reálnému mikrokontroleru MSP430 byla zjištěna dostačující přesnost simulace.
+Pro implementaci simulátoru byl využit jazyk C++ společně s frameworkem Qt, čímž je zjednodušena případná budoucí distribuce simulátoru společně se softwarem QDevKit a výsledný simulátor je jednoduše přenositelný a spravovatelný. Díky využití automatických jednotkových testů testujících implementaci knihovny simulující mikrokontroler MSP430 je implementace mikrokontroleru MSP430 dobře otestována. Otestováním simulátoru oproti reálnému mikrokontroleru MSP430 byla zjištěna dostačující přesnost simulace.
 
 Simulátor je možné rozšiřovat za pomocí externích modulů implementovaných v jazyce C++ nebo Python. V rámci diplomové práce bylo implementováno několik rozšiřujících modulů jako je například LCD displej nebo SD karta. Postup tvorby těchto modulů byl popsán v případové studii obsažené v této diplomové práci, která rovněž dokládá funkčnost a dostatečnou modulárnost implementace.
 
