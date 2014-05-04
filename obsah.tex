@@ -6,7 +6,7 @@ vestavěné (embedded) systémy.
 
 Při návrhu vestavěných systémů je v praxi často používána simulace. Díky využití simulátoru daného mikrokontroleru (případně celého vestavěného systému) lze ověřit funkčnost systému již při jeho návrhu aniž by bylo nutné vynaložit náklady na prvotní prototypy. Simulační čas lze zrychlit nebo naopak zpomalit a tím jednodušeji prozkoumat vybrané jevy. Simulace může rovněž zjednodušit hledání problémů viděných na reálném hardwaru, kdy jejich příčiny nelze prostým zkoumáním reálného systému jednoduše odhalit. Při použití simulace je také jednodušší vyzkoušet případné změny systému a zkoumat nové postupy bez dalšího zvýšení nákladů. Nejen z těchto důvodů je tedy simulace vestavěných systémů užitečná a má smysl se jí zabývat.
 
-Tato diplomová práce si dává za cíl návrh a implementaci jednoduše rozšiřitelného pokročilého simulátoru mikrokontrolerů rodiny MSP430 od výrobce Texas Instruments. Tyto mikrokontrolery jsou hojně rozšířené především díky své nízké ceně, malé spotřebě a jednoduchosti práce s nimi. Lze je nalézt například i v platformě FITkit používané k výukovým účelům Fakultou informačních technologií Vysokého učení technického v Brně. Simulátor implementovaný v této práci je navrhován právě jako doplňující prostředek pro vývoj aplikací pro tuto platformu, avšak bude moci být použit i samostatně. V současné době není obdobný software pod svobodnou licencí dostupný.
+Tato diplomová práce si dává za cíl návrh a implementaci jednoduše rozšiřitelného pokročilého simulátoru mikrokontrolerů rodiny MSP430 od výrobce Texas Instruments. Tyto mikrokontrolery jsou hojně rozšířené především díky své nízké ceně, malé spotřebě a jednoduchosti práce s nimi. Lze je nalézt například i v platformě FITkit \cite{fitkit} používané k výukovým účelům Fakultou informačních technologií Vysokého učení technického v Brně. Simulátor implementovaný v této práci je navrhován právě jako doplňující prostředek pro vývoj aplikací pro tuto platformu, avšak bude moci být použit i samostatně. V současné době není obdobný software pod svobodnou licencí dostupný.
 
 Tato diplomová práce je rozdělena do osmi kapitol.
 
@@ -19,7 +19,7 @@ Tato kapitola stručně shrnuje základy architektury mikrokontrolerů rodiny MS
 \begin{figure}[ht]
 \centering
 \includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.5]{fig/msp430block}
-\caption{Blokové schéma mikrokontroleru MSP430.}
+\caption{Blokové schéma mikrokontroleru MSP430. Převzato z \cite{msp430family}.}
 \label{fig:msp430block}
 \end{figure}
 
@@ -213,7 +213,7 @@ Jedná se o jednoduchý textový formát obsahující jednotlivé byty programu,
 \begin{figure}[ht]
 \centering
 \includegraphics[trim=0cm 0cm 0cm 0cm, scale=0.7]{fig/intelhex}
-\caption{Ukázka souboru ve formátu Intel HEX s popisky.}
+\caption{Ukázka souboru ve formátu Intel HEX s popisky. Převzato z \cite{intelhex2}.}
 \label{fig:intelhex}
 \end{figure}
 
@@ -270,7 +270,7 @@ Další podkapitoly v této kapitole se budou odkazovat na následující typick
 \begin{figure}[ht]
 \centering
 \includegraphics[trim=0cm 0cm 0cm 0cm]{fig/bank}
-\caption{Ilustrace modelového příklady fronty v obchodním domě.}
+\caption{Ilustrace modelového příklady fronty v obchodním domě. Převzato z \cite{adevs}.}
 \label{fig:bank}
 \end{figure}
 
@@ -284,7 +284,7 @@ Cílem simulace bude zjištění průměrného času stráveného zákazníkem v
 
 \section{Komponenty událostně řízené simulace}
 
-Abychom mohli příklad z úvodu této kapitoly simulovat, je potřeba definovat základní komponenty událostně řízené simulace.
+Abychom mohli příklad z úvodu této kapitoly simulovat, je potřeba definovat základní komponenty událostně řízené simulace. Vysvětlení následujících termínů vychází z \cite{dess}.
 
 \subsubsection{Entita}
 
@@ -447,7 +447,7 @@ Posledním atomickým modelem je model Statistiky. Tento model obsahuje vstupní
 
 V této podkapitole je stručně popsána knihovna ADEVS umožňující událostně řízenou simulaci. Vzhledem k povaze diplomové práce bylo potřeba využít open-source knihovnu podporující jazyk C++. Knihovna ADEVS je jako jediná aktivně vyvíjená knihovna schopna tyto požadavky splnit.
 
-Jejím autorem je James J. Nutaro působící v Oak Ridge National Laboratory. Knihovna je vydána pod licencí LGPLv2+.
+Jejím autorem je James J. Nutaro působící v Oak Ridge National Laboratory. Knihovna je vydána pod licencí LGPLv2+. Následující podkapitoly vychází z \cite{adevs}.
 
 \subsection{Atomický model}
 
@@ -909,9 +909,9 @@ Pro tvorbu grafického uživatelského rozhraní byla použita knihovna Qt \cite
 
 V následujících kapitolách jsou popsány implementační detaily jednotlivých částí simulátoru. Vzhledem k rozsáhlosti celého projektu se tato kapitola soustředí pouze na nejzajímavější aspekty implementace a nepopisuje implementaci do úplných detailů.
 
-\section{Simulační jádra}
+\section{Simulační jádro}
 
-Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci za pomocí formalismu DEVS a je šířena pod licencí GPLv2+. Díky této licenci může být použita i v případě bližší integrace simulátoru do prostředí QDevKit. Příklady využití knihovny ADEVS včetně její specifikace jsou k dispozici v rámci \cite{nutaro}.
+Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci za pomocí formalismu DEVS a je šířena pod licencí GPLv2+. Díky této licenci může být použita i v případě bližší integrace simulátoru do prostředí QDevKit. Příklady využití knihovny ADEVS včetně její specifikace jsou k dispozici v rámci \cite{nutaro} a \cite{adevs}.
 
 \subsection{Knihovna ADEVS a její využití}
 
@@ -1413,14 +1413,7 @@ Modul LCD displeje (viz obrázek \ref{fig:lcd}) implementuje v jazyce Python LCD
 
 \subsection{SD karta}
 
-Modul SD karty (viz obrázek \ref{fig:sd}) vznikl zejména za účelem testování komunikačních modulů komunikujících pomocí SPI. Podobně jako modul LCD displeje je i modul SD karty naprogramován v jazyce Python a neimplementuje kompletní standard \cite{sdio} definující komunikační rozhraní SD karty. Implementace modulu je v rámci diplomové práce omezena na následující vlastnosti:
-
-\begin{itemize}
-\item Velikost SD karty pouze 2MB.
-\item Čtení CSD dat SD karty - tato data popisují vlastnosti SD karty (například její velikost).
-\item Možnost nastavit délku bloku čtených/zapisovaných dat.
-\item Čtení a zápis dat na libovolnou adresu SD karty včetně blokového zápisu a čtení.
-\end{itemize}
+Modul SD karty (viz obrázek \ref{fig:sd}) vznikl zejména za účelem testování komunikačních modulů komunikujících pomocí SPI. Podobně jako modul LCD displeje je i modul SD karty naprogramován v jazyce Python a neimplementuje kompletní standard \cite{sdio} definující komunikační rozhraní SD karty.
 
 \begin{figure}[ht]
 \centering
@@ -1428,6 +1421,15 @@ Modul SD karty (viz obrázek \ref{fig:sd}) vznikl zejména za účelem testován
 \caption{Modul SD karty.}
 \label{fig:sd}
 \end{figure}
+
+Implementace modulu je v rámci diplomové práce omezena na následující vlastnosti:
+
+\begin{itemize}
+\item Velikost SD karty pouze 2MB.
+\item Čtení CSD dat SD karty - tato data popisují vlastnosti SD karty (například její velikost).
+\item Možnost nastavit délku bloku čtených/zapisovaných dat.
+\item Čtení a zápis dat na libovolnou adresu SD karty včetně blokového zápisu a čtení.
+\end{itemize}
 
 \subsection{Oscilátor}
 
@@ -1444,7 +1446,7 @@ Modul oscilátoru (viz obrázek \ref{fig:oscilator}) slouží ke generování pe
 
 V rámci této kapitoly je popsán postup ověření korektnosti simulátoru, jednotlivé testy a jejich výsledky. Cílem bylo převážně ověření časování funkcí mikrokontroleru a jeho výstupu. Vzhledem k využití automatických testů při implementaci knihovny simulující mikrokontroler MSP430 je právě časování jedinou neotestovanou částí simulátoru.
 
-Testování probíhalo za použití zařízení FITKit verze 1.2 s mikrokontrolerem TODO. Do tohoto mikrokontroleru byly nahrávány testovací programy a výstup mikrokontroleru byl snímán dvoukanálovým osciloskopem TODO. Následně byl stejný program spuštěn v simulátoru a za pomocí sledování pinů byly naměřeny hodnoty ze stejných pinů jako na reálném mikrokontroleru.
+Testování probíhalo za použití zařízení FITKit verze 1.2 s mikrokontrolerem MSP430F168IPM. Do tohoto mikrokontroleru byly nahrávány testovací programy a výstup mikrokontroleru byl snímán dvoukanálovým osciloskopem 50MHz VELLEMAN F-KV-PCS500 SE \cite{velleman}. Následně byl stejný program spuštěn v simulátoru a za pomocí sledování pinů byly naměřeny hodnoty ze stejných pinů jako na reálném mikrokontroleru.
 
 V dalších podkapitolách jsou jednotlivé testovací programy podrobněji rozebrány a okomentovány jejich výsledky.
 
@@ -1624,6 +1626,19 @@ Stejný výsledek lze očekávat i při použití jiných periferií (napříkla
 Obrázek \ref{fig:tabulka2} pak zobrazuje výsledky ze simulace na mikrokontroleru řady MSP430x214x o frekvenci 1 262 917 Hz.
 
 Z porovnání obou tabulek je zřejmé, že s nižší frekvencí mikrokontroleru je simulace rychlejší, ale zpracuje se méně instrukcí. To je logické, protože nižší frekvence vede k větší časové prodlevě mezi jednotlivými simulačními událostmi a během 500 ms se jich tím pádem zpracuje méně.
+
+Další tabulka na obrázku \ref{fig:tabulka3} zobrazuje rozdíl v rychlosti simulace stejné externí komponenty (v tomto případě oscilátoru) implementovaného v jazyce C++ a Python. Jedná se o dobu trvání 500 ms simulace, kdy všechny simulační události byly generovány právě tímto jediným oscilátorem tikajícím o frekvenci 7 372 800 Hz.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[trim=-2cm 24.5cm 5cm 2cm]{fig/tabulka3}
+\caption{Tabulka zobrazující rozdíl mezi implementací oscilátoru v jazyce Python a jazyce C++.}
+\label{fig:tabulka3}
+\end{figure}
+
+Z tabulky vyplývá, že simulování této konkrétní komponenty v jazyce Python je až 8x pomalejší než simulace stejného chování implementovaného v jazyce C++. Z principu bude vždy simulace komponent v jazyce Python pomalejší, protože dochází ke změně kontextu z C++ do interpretu Python a rovněž dochází ke změně struktur, ve kterých jsou uloženy simulační události.
+
+Při simulaci komponent, které negenerují simulační události ve velké míře (například tlačítko, LED dioda nebo například LCD displej), je rychlost simulace dostačující. Pokud však simulovaná komponenta generuje velké množství událostí (například oscilátor), je vhodné ji implementovat kvůli rychlosti v jazyce C++.
 
 \chapter{Tvorba modulů rozšiřujících základní funkci}
 \label{pripad}
@@ -2665,7 +2680,7 @@ Pro implementaci simulátoru byl využit jazyk C++ společně s frameworkem Qt, 
 
 Simulátor je možné rozšiřovat za pomocí externích modulů implementovaných v jazyce C++ nebo Python. V rámci diplomové práce bylo implementováno několik rozšiřujících modulů jako je například LCD displej nebo SD karta. Postup tvorby těchto modulů byl popsán v případové studii obsažené v této diplomové práci, která rovněž dokládá funkčnost a dostatečnou modulárnost implementace.
 
-Výsledný simulátor byl zveřejněn pod licencí GPLv2+ a byla pro něj vytvořena jednoduchá webová prezentace se základními informacemi na adrese <http://qsimkit.org/>. Na této adrese lze rovněž stáhnout testovací instalátor aplikace pro systém Windows.
+Výsledný simulátor byl zveřejněn pod licencí GPLv2+ a byla pro něj vytvořena jednoduchá webová prezentace se základními informacemi na adrese \url{http://qsimkit.org/}. Na této adrese lze rovněž stáhnout testovací instalátor aplikace pro systém Windows.
 
 Vzhledem k architektuře simulátoru se nabízí hned několik možných směrů jejího budoucího vylepšování.
 
