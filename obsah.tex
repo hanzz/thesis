@@ -392,7 +392,7 @@ Spojovaný model (viz obrázek \ref{fig:coupled}) je tvořen svými komponentami
 
 Množinu vstupů spojovaného modelu značíme jako $X$, množinu výstupů pak jako $Y$. Množinu jmen jednolitvých komponent jako $D$. Množina samotných komponent je pak značena jako $M_i$, kde pro každou podkomponentu platí $i \in D$.
 
-Spojovaný model dále definuje 3 množiny propojení. Množina $C_{xx}\subseteq X \times \bigcup_{i \in D} X_i$ se nazývá množina externích vstupních propojení a mapu vstupy spojovaného modelu na vstupny jednolivých jeho komponent. Množina $C_{yx}\subseteq \bigcup_{i \in D} Y_i \times \bigcup_{i \in D} X_i$ se nazývý množina interních propojení a mapuje výstupy jednotlivých komponent spojovaného modelu na jejich vstupy. Poslední množinou je množina $C_{yy}: \bigcup_{i \in D} Y_i \rightarrow Y^\phi$ mapující výstupy jednotlivých komponent spojovaného modelu na výstupy spojovaného modelu.
+Spojovaný model dále definuje 3 množiny propojení. Množina $C_{xx}\subseteq X \times \bigcup_{i \in D} X_i$ se nazývá množina externích vstupních propojení a mapuje vstupy spojovaného modelu na vstupy jednotlivých jeho komponent. Množina $C_{yx}\subseteq \bigcup_{i \in D} Y_i \times \bigcup_{i \in D} X_i$ se nazývá množina interních propojení a mapuje výstupy jednotlivých komponent spojovaného modelu na jejich vstupy. Poslední množinou je množina $C_{yy}: \bigcup_{i \in D} Y_i \rightarrow Y^\phi$ mapující výstupy jednotlivých komponent spojovaného modelu na výstupy spojovaného modelu.
 
 V případě, kdy ve stejný čas nastane více událostí, je potřeba vybrat komponentu, která bude zpracovávat událost jako první. K tomu slouží funkce $Select:2^D \rightarrow D$ určující, jak vybrat komponentu zpracovávající událost z množiny událostí naplánovaných na stejný čas.
 
@@ -420,11 +420,11 @@ N=<X,Y,D,\{M_i\},C_{xx}, C_{yx}, C_{yy}, Select>
 \item $Select:2^D \rightarrow D$ - funkce určující, jak vybrat komponentu zpracovávající událost z množiny událostí naplánovaných na stejný čas.
 \end{itemize}
 
-Podobně jako atomické modelu, mění i spojované modely stavy svých komponent v případě příchozí události nebo pokud jedna z podkomponent spustí svoji funkci změny stav $\delta_{int}$ a vygeneruje výstup. V obou případech jsou tyto události přeposlány ostatním komponentám definovaným v množiných propojení $C_{xx}$, $C_{yy}$ a $C_{yx}$.
+Podobně jako atomické modely, mění i spojované modely stavy svých komponent v případě příchozí události nebo pokud jedna z podkomponent spustí svoji interní přechodovou funkci $\delta_{int}$ a vygeneruje výstup. V obou případech jsou tyto události přeposlány ostatním komponentám definovaným v množinách propojení $C_{xx}$, $C_{yy}$ a $C_{yx}$.
 
 \subsubsection{Příklad využití formalismu DEVS}
 
-Příklad simulace fronty v obchodním domě lze popsat pomocí formalismu DEVS. Jak lze vidět na obrázku \ref{fig:fronta}, jedná se o tří atomické modely propojené v rámci jednoho spojovaného modelu.
+Příklad simulace fronty v obchodním domě lze popsat pomocí formalismu DEVS. Jak lze vidět na obrázku \ref{fig:fronta}, jedná se o tři atomické modely propojené v rámci jednoho spojovaného modelu.
 
 \begin{figure}[ht]
 \centering
@@ -439,7 +439,7 @@ Atomický model Pokladní reprezentuje pokladního a jeho frontu. Při každé v
 
 Jakmile je zákazník obsloužen (tzv. po uplynutí doby definované funkcí posunu času), je nejprve zavolána výstupní funkce modelu. V této funkci je zákazník předán na výstup nazvaný "odchod zákazníka". Ihned po výstupní funkci je zavolána interní přechodová funkce. Tato funkce odebere obslouženého zákazníka z fronty a začne obsluhu následujícího zákazníka.
 
-V případě kdy zákazník příjde do fronty ve stejnou dobu jako je jiný zákazník obsloužen, je zavolána kolizní funkce. Tato kolize je řešena dokončením obsloužení aktuálního zákazníka a až pak přidáním nového zákazníka na konec fronty.
+V případě, kdy zákazník příjde do fronty ve stejnou dobu jako je jiný zákazník obsloužen, je zavolána kolizní funkce. Tato kolize je řešena dokončením obsloužení aktuálního zákazníka a až pak přidáním nového zákazníka na konec fronty.
 
 Posledním atomickým modelem je model Statistiky. Tento model obsahuje vstupní událost "odchod zákazníka", na kterou je napojena stejnojmenná výstupní událost modelu Pokladní. Úkolem tohoto modelu je uložit ve své externí přechodové funkci dobu, kterou každý zákazník strávil ve frontě a na konci simulace vypsat statistické informace.
 
@@ -561,13 +561,13 @@ class Clerk: public adevs::Atomic<IO_Type>  {
 };
 \end{lstlisting}
 
-Typ adevs::Bag je abstraktním datovým typem umožňujícím uchování jakýchkoliv objektů (v tomto případě objektů typu IO\_Type).
+Typ adevs::Bag je abstraktním datovým typem umožňujícím uchování jakýchkoliv objektů (v tomto případě objektů typu IO\_Type). Implementace jednotlivých metod by vycházela z popisu chování modelu Pokladního.
 
-Kostra dalších modelů (Generator a Statistics) v simulaci obchodního domu by se pak příliš nelišila od modelu zákazníka.
+Kostra dalších modelů (Generator a Statistics) v simulaci obchodního domu se příliš neliší od modelu zákazníka.
 
 \subsection{Spojovaný model}
 
-Spojovaný model je v knihovně ADEVS reprezentován třídou Network. Standardně nabízí knihovna ADEVS implementaci této třídy nazvanou SimpleDigraph. Pomocí této třídy lze propojovat vstupní a výstupní porty jednotlivých atomických i spojovaných modelů. Využití této třídy je přímočaré, jak ilustruje následující ukázka propojující modely Generator, Clerk:
+Spojovaný model je v knihovně ADEVS reprezentován třídou Network. Standardně nabízí knihovna ADEVS implementaci této třídy nazvanou SimpleDigraph. Pomocí této třídy lze propojovat vstupní a výstupní porty jednotlivých atomických i spojovaných modelů. Využití této třídy je přímočaré, jak ilustruje následující ukázka propojující modely Generator a Clerk:
 
 \lstset{language=XML, numbers=left, frame=single, breaklines=true, tabsize=2, xleftmargin=20pt, literate=%
     {á}{{\'a}}1
@@ -652,6 +652,8 @@ while (sim.nextEventTime() < DBL_MAX) {
     sim.execNextEvent();
 }
 \end{lstlisting}
+
+Takto lze za pomocí knihovny ADEVS vytvořit jednoduchý modulární simulátor a řídit simulaci.
 
 \chapter{Návrh událostně řízeného simulátoru}
 \label{navrh}
@@ -1623,7 +1625,7 @@ Z tabulky rovněž vyplývá, že grafické uživatelské rozhraní zpracuje za 
 
 Stejný výsledek lze očekávat i při použití jiných periferií (například i externích modulů). Čím více simulačních událostí bude generováno v malém časovém intervalu, tím pomalejší simulace bude. To je rovněž umocněno tím, že simulace je sekvenční, zatímco na reálném mikrokontroleru běží většina procesů parelelně.
 
-Obrázek \ref{fig:tabulka2} pak zobrazuje výsledky ze simulace na mikrokontroleru řady MSP430x214x o frekvenci 1 262 917 Hz.
+Obrázek \ref{fig:tabulka2} pak zobrazuje výsledky ze simulace na mikrokontroleru řady MSP430x241x o frekvenci 1 262 917 Hz.
 
 Z porovnání obou tabulek je zřejmé, že s nižší frekvencí mikrokontroleru je simulace rychlejší, ale zpracuje se méně instrukcí. To je logické, protože nižší frekvence vede k větší časové prodlevě mezi jednotlivými simulačními událostmi a během 500 ms se jich tím pádem zpracuje méně.
 
