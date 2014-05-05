@@ -913,7 +913,7 @@ V~následujících kapitolách jsou popsány implementační detaily jednotlivý
 
 \section{Simulační jádro}
 
-Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci za pomocí formalismu DEVS a je šířena pod licencí GPLv2+. Díky této licenci může být použita i v~případě bližší integrace simulátoru do prostředí QDevKit. Příklady využití knihovny ADEVS včetně její specifikace jsou k~dispozici v~rámci \cite{nutaro} a \cite{adevs}.
+Jako základ pro simulační jádro byla použita knihovna ADEVS. Tato knihovna implementuje diskrétní simulaci za pomocí formalismu DEVS a je šířena pod licencí LGPLv2+. Díky této licenci může být použita i v~případě bližší integrace simulátoru do prostředí QDevKit. Příklady využití knihovny ADEVS včetně její specifikace jsou k~dispozici v~rámci \cite{nutaro} a \cite{adevs}.
 
 \subsection{Knihovna ADEVS a její využití}
 
@@ -1448,7 +1448,7 @@ Modul oscilátoru (viz obrázek \ref{fig:oscilator}) slouží ke generování pe
 
 V~rámci této kapitoly je popsán postup ověření korektnosti simulátoru, jednotlivé testy a jejich výsledky. Cílem bylo převážně ověření časování funkcí mikrokontroleru a jeho výstupu. Vzhledem k~využití automatických testů při implementaci knihovny simulující mikrokontroler MSP430 je právě časování jedinou neotestovanou částí simulátoru.
 
-Testování probíhalo za použití zařízení FITKit verze 1.2 s~mikrokontrolerem MSP430F168IPM. Do tohoto mikrokontroleru byly nahrávány testovací programy a výstup mikrokontroleru byl snímán dvoukanálovým osciloskopem 50MHz VELLEMAN F-KV-PCS500 SE \cite{velleman}. Následně byl stejný program spuštěn v~simulátoru a za pomocí sledování pinů byly naměřeny hodnoty ze stejných pinů jako na reálném mikrokontroleru.
+Testování probíhalo za použití zařízení FITKit verze 1.2 s~mikrokontrolerem \newline MSP430F168IPM. Do tohoto mikrokontroleru byly nahrávány testovací programy a výstup mikrokontroleru byl snímán dvoukanálovým osciloskopem 50MHz VELLEMAN F-KV-PCS500 SE \cite{velleman}. Následně byl stejný program spuštěn v~simulátoru a za pomocí sledování pinů byly naměřeny hodnoty ze stejných pinů jako na reálném mikrokontroleru.
 
 V~dalších podkapitolách jsou jednotlivé testovací programy podrobněji rozebrány a okomentovány jejich výsledky.
 
